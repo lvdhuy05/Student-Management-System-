@@ -1,0 +1,161 @@
+@startuml
+title SMS - Class Diagram
+
+skinparam classAttributeIconSize 0
+hide circle
+
+enum VaiTro {
+  ADMIN
+  DAO_TAO
+  GIANG_VIEN
+  CO_VAN
+}
+
+enum TrangThaiTaiKhoan {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum TrangThaiSinhVien {
+  ACTIVE
+  INACTIVE
+  SOFT_DELETED
+}
+
+enum TrangThaiDangKy {
+  DANG_HOC
+  HOAN_THANH
+  HUY
+}
+
+class NguoiDung {
+  +id: UUID
+  +username: string
+  +passwordHash: string
+  +vaiTro: VaiTro
+  +trangThai: TrangThaiTaiKhoan
+  +coQuyen(chucNang: string): bool
+}
+
+class SinhVien {
+  +maSv: string
+  +hoTen: string
+  +ngaySinh: date
+  +gioiTinh: string
+  +email: string
+  +soDienThoai: string
+  +khoa: string
+  +nganh: string
+  +lop: string
+  +khoaHoc: string
+  +trangThai: TrangThaiSinhVien
+  +capNhatThongTin(): void
+  +xoaMem(): void
+}
+
+class HocPhan {
+  +maHp: string
+  +tenHp: string
+  +soTinChi: int
+}
+
+class DangKyHocPhan {
+  +id: UUID
+  +hocKy: string
+  +namHoc: string
+  +trangThai: TrangThaiDangKy
+}
+
+class Diem {
+  +id: UUID
+  +diemQuaTrinh: float
+  +diemThi: float
+  +diemTongKet10: float
+  +diemHe4: float
+  +diemChu: string
+  +lanHoc: int
+  +capNhatLuc: datetime
+  +tinhDiemTongKet(): float
+  +quyDoiDiem(): void
+}
+
+class GPAHocKy {
+  +id: UUID
+  +hocKy: string
+  +namHoc: string
+  +gpaHe4: float
+  +tongTinChiTichLuy: int
+  +capNhatLuc: datetime
+}
+
+class HocLuc {
+  +id: UUID
+  +gpaTichLuy: float
+  +xepLoai: string
+  +capNhatLuc: datetime
+}
+
+class QuyTacXepLoai {
+  +id: UUID
+  +diemTu: float
+  +diemDen: float
+  +nhanXepLoai: string
+  +kichHoat: bool
+}
+
+class AuditLog {
+  +id: UUID
+  +actorId: UUID
+  +hanhDong: string
+  +doiTuong: string
+  +truocThayDoi: text
+  +sauThayDoi: text
+  +taoLuc: datetime
+}
+
+class StudentService {
+  +taoSinhVien(): SinhVien
+  +capNhatSinhVien(maSv: string): SinhVien
+  +xoaMemSinhVien(maSv: string): void
+  +timKiemSinhVien(filter: map): list
+}
+
+class GradeService {
+  +nhapDiem(payload: map): Diem
+  +capNhatDiem(id: UUID, payload: map): Diem
+  +validateDiem(payload: map): bool
+}
+
+class GPAService {
+  +tinhGPAHocKy(maSv: string, hocKy: string, namHoc: string): GPAHocKy
+  +tinhGPATichLuy(maSv: string): float
+  +xepLoaiHocLuc(maSv: string): HocLuc
+}
+
+class ReportService {
+  +xuatBangDiemCaNhan(maSv: string): File
+  +xuatDanhSachSinhVien(filter: map): File
+  +xuatBaoCaoHocLuc(filter: map): File
+  +xuatDanhSachCanhBaoHocVu(filter: map): File
+}
+
+SinhVien "1" -- "0..*" DangKyHocPhan : dang ky
+HocPhan "1" -- "0..*" DangKyHocPhan : duoc dang ky
+DangKyHocPhan "1" -- "0..*" Diem : lan hoc
+SinhVien "1" -- "0..*" GPAHocKy : tich luy
+SinhVien "1" -- "0..*" HocLuc : lich su
+QuyTacXepLoai "1" -- "0..*" HocLuc : ap dung
+NguoiDung "1" -- "0..*" AuditLog : tao log
+
+StudentService ..> SinhVien : CRUD/search
+GradeService ..> Diem : tinh/luu
+GradeService ..> DangKyHocPhan : kiem tra dang ky
+GradeService ..> GPAService : trigger recalc
+GPAService ..> GPAHocKy : cap nhat
+GPAService ..> QuyTacXepLoai : doc nguong
+ReportService ..> SinhVien : lay du lieu
+ReportService ..> Diem : tong hop diem
+ReportService ..> GPAHocKy : tong hop GPA
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml
+title SMS - Activity Diagram (Luong nghiep vu tong the)
+
+start
+
+:Dang nhap he thong;
+if (Xac thuc + RBAC hop le?) then (Co)
+  :Chon chuc nang;
+else (Khong)
+  :Tu choi truy cap;
+  stop
+endif
+
+repeat
+  if (CRUD sinh vien?) then (Co)
+    :Nhap thong tin sinh vien;
+    if (Du lieu hop le va khong trung?) then (Co)
+      :Luu thay doi sinh vien;
+    else (Khong)
+      :Tra loi validation error;
+    endif
+
+  elseif (Nhap diem/GPA?) then (Co)
+    :Nhap diem qua trinh + diem thi;
+    if (Diem 0..10 va co dang ky hoc phan?) then (Co)
+      :Luu diem;
+      :Tinh diem tong ket he 10;
+      :Quy doi diem he 4 + diem chu;
+      :Tinh GPA hoc ky va tich luy;
+      :Xep loai hoc luc theo nguong cau hinh;
+      :Ghi audit log;
+    else (Khong)
+      :Tra loi loi nghiep vu;
+    endif
+
+  elseif (Tim kiem sinh vien?) then (Co)
+    :Nhap tu khoa + bo loc;
+    :Thuc hien tim kiem + phan trang;
+    :Hien thi ket qua;
+
+  elseif (Xuat bao cao?) then (Co)
+    :Chon loai bao cao + bo loc;
+    if (Nguoi dung co quyen xuat?) then (Co)
+      :Tong hop du lieu bao cao;
+      :Render file PDF/Excel;
+      :Ghi nhat ky xuat bao cao;
+      :Tra file ve nguoi dung;
+    else (Khong)
+      :Tra loi 403 Forbidden;
+    endif
+  endif
+
+repeat while (Tiep tuc thao tac?) is (Co)
+
+stop
+@enduml
