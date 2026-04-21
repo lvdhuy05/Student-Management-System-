@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập | SMS{% endblock %}
+
+{% block content %}
+<section class="card login-card">
+  <h2>Đăng nhập hệ thống</h2>
+  <p class="muted">Sử dụng tài khoản đã được cấp quyền để truy cập chức năng phù hợp.</p>
+
+  <form method="post" class="grid-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="message error">{{ form.non_field_errors|join:", " }}</div>
+    {% endif %}
+
+    <label>
+      Tên đăng nhập
+      <input type="text" name="username" autofocus required>
+    </label>
+
+    <label>
+      Mật khẩu
+      <div class="password-field">
+        <input id="password-input" type="password" name="password" required>
+        <button
+          id="toggle-password-btn"
+          class="btn ghost toggle-password"
+          type="button"
+          aria-pressed="false"
+          aria-controls="password-input"
+        >
+          Hiện
+        </button>
+      </div>
+    </label>
+
+    <button type="submit" class="btn primary">Đăng nhập</button>
+  </form>
+</section>
+
+<script>
+  (function () {
+    const passwordInput = document.getElementById("password-input");
+    const toggleBtn = document.getElementById("toggle-password-btn");
+    if (!passwordInput || !toggleBtn) return;
+
+    toggleBtn.addEventListener("click", function () {
+      const isHidden = passwordInput.type === "password";
+      passwordInput.type = isHidden ? "text" : "password";
+      toggleBtn.textContent = isHidden ? "Ẩn" : "Hiện";
+      toggleBtn.setAttribute("aria-pressed", String(isHidden));
+    });
+  })();
+</script>
+{% endblock %}

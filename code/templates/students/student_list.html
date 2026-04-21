@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Danh sách sinh viên | SMS{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>Danh sách sinh viên</h2>
+    {% if can_manage_students %}
+      <a class="btn primary" href="{% url 'students:student_create' %}">+ Thêm sinh viên</a>
+    {% endif %}
+  </div>
+
+  <form method="get" class="grid-form grid-5">
+    <label>
+      Từ khóa
+      <input type="text" name="keyword" value="{{ filters.keyword }}" placeholder="Mã SV / Họ tên">
+    </label>
+    <label>
+      Khoa
+      <input type="text" name="khoa" value="{{ filters.khoa }}">
+    </label>
+    <label>
+      Ngành
+      <input type="text" name="nganh" value="{{ filters.nganh }}">
+    </label>
+    <label>
+      Lớp
+      <input type="text" name="lop" value="{{ filters.lop }}">
+    </label>
+    <label>
+      Trạng thái
+      <select name="trang_thai">
+        <option value="">Tất cả (ẩn bản ghi đã xóa mềm)</option>
+        {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if filters.trang_thai == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn primary">Tìm kiếm</button>
+      <a class="btn ghost" href="{% url 'students:student_list' %}">Đặt lại</a>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã SV</th>
+          <th>Họ tên</th>
+          <th>Email</th>
+          <th>Khoa</th>
+          <th>Ngành</th>
+          <th>Lớp</th>
+          <th>Trạng thái</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in page_obj %}
+          <tr>
+            <td>{{ student.ma_sv }}</td>
+            <td>{{ student.ho_ten }}</td>
+            <td>{{ student.email }}</td>
+            <td>{{ student.khoa }}</td>
+            <td>{{ student.nganh }}</td>
+            <td>{{ student.lop }}</td>
+            <td>{{ student.trang_thai }}</td>
+            <td>
+              <a class="btn tiny" href="{% url 'students:student_detail' student.ma_sv %}">Xem</a>
+              {% if can_manage_students %}
+                <a class="btn tiny ghost" href="{% url 'students:student_update' student.ma_sv %}">Sửa</a>
+                <form method="post" action="{% url 'students:student_delete' student.ma_sv %}" class="inline-form">
+                  {% csrf_token %}
+                  <button class="btn tiny danger" type="submit" onclick="return confirm('Xác nhận xóa mềm sinh viên?')">Xóa mềm</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8">Không có dữ liệu phù hợp.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&keyword={{ filters.keyword }}&khoa={{ filters.khoa }}&nganh={{ filters.nganh }}&lop={{ filters.lop }}&trang_thai={{ filters.trang_thai }}">Trang trước</a>
+      {% endif %}
+      <span>Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&keyword={{ filters.keyword }}&khoa={{ filters.khoa }}&nganh={{ filters.nganh }}&lop={{ filters.lop }}&trang_thai={{ filters.trang_thai }}">Trang sau</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+﻿{% extends "base.html" %}
+{% block title %}Nhập điểm | SMS{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>Nhập điểm học phần</h2>
+  </div>
+  <p class="muted">Chọn sinh viên trước, danh sách đăng ký học phần sẽ lọc theo sinh viên đó.</p>
+  <p class="muted">Công thức: Chuyên cần 10% + Quá trình 30% + Thi 60%.</p>
+
+  <form method="post" class="grid-form grid-2">
+    {% csrf_token %}
+    {% for field in form %}
+      <label>
+        {{ field.label }}
+        {{ field }}
+        {% if field.errors %}
+          <small class="error-text">{{ field.errors|join:", " }}</small>
+        {% endif %}
+      </label>
+    {% endfor %}
+    <div class="form-actions">
+      <button type="submit" class="btn primary">Lưu điểm và tính GPA</button>
+      <a class="btn ghost" href="{% url 'students:dashboard' %}">Hủy</a>
+    </div>
+  </form>
+</section>
+
+<script>
+  (function () {
+    const studentSelect = document.getElementById("id_student");
+    if (!studentSelect) return;
+
+    studentSelect.addEventListener("change", function () {
+      const url = new URL(window.location.href);
+      if (studentSelect.value) {
+        url.searchParams.set("student", studentSelect.value);
+      } else {
+        url.searchParams.delete("student");
+      }
+      window.location.href = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "");
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Trang chủ | SMS{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Hệ thống Quản lý Sinh viên</h1>
+  <p>Quản lý hồ sơ, nhập điểm, tính GPA, xếp loại học lực và xuất báo cáo.</p>
+</section>
+
+<section class="stats-grid">
+  <article class="card stat-card">
+    <h3>Sinh viên</h3>
+    <p class="big-number">{{ student_count }}</p>
+  </article>
+  <article class="card stat-card">
+    <h3>Học phần</h3>
+    <p class="big-number">{{ course_count }}</p>
+  </article>
+  <article class="card stat-card">
+    <h3>Đăng ký học phần</h3>
+    <p class="big-number">{{ enrollment_count }}</p>
+  </article>
+  <article class="card stat-card">
+    <h3>Bản ghi điểm</h3>
+    <p class="big-number">{{ grade_count }}</p>
+  </article>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Nhật ký thao tác gần đây</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Người thao tác</th>
+          <th>Hành động</th>
+          <th>Đối tượng</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+          <tr>
+            <td>{{ log.tao_luc|date:"d/m/Y H:i" }}</td>
+            <td>{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</td>
+            <td>{{ log.hanh_dong }}</td>
+            <td>{{ log.doi_tuong }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4">Chưa có nhật ký.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

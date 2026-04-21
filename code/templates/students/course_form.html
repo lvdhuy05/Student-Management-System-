@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Tạo học phần | SMS{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>Tạo học phần</h2>
+  </div>
+
+  <form method="post" class="grid-form grid-2">
+    {% csrf_token %}
+    {% for field in form %}
+      <label>
+        {{ field.label }}
+        {{ field }}
+        {% if field.errors %}
+          <small class="error-text">{{ field.errors|join:", " }}</small>
+        {% endif %}
+      </label>
+    {% endfor %}
+    <div class="form-actions">
+      <button class="btn primary" type="submit">Lưu học phần</button>
+      <a class="btn ghost" href="{% url 'students:dashboard' %}">Hủy</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

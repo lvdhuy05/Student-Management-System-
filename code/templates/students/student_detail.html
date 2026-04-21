@@ -1,0 +1,120 @@
+﻿{% extends "base.html" %}
+{% block title %}Chi tiết sinh viên {{ student.ma_sv }} | SMS{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>{{ student.ho_ten }} ({{ student.ma_sv }})</h2>
+    <div class="actions">
+      {% if can_manage_students %}
+        <a class="btn ghost" href="{% url 'students:student_update' student.ma_sv %}">Sửa thông tin</a>
+      {% endif %}
+      <a class="btn primary" href="{% url 'students:transcript_report' student.ma_sv %}">Xem báo cáo bảng điểm</a>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <p><strong>Email:</strong> {{ student.email }}</p>
+    <p><strong>Ngày sinh:</strong> {{ student.ngay_sinh|date:"d/m/Y" }}</p>
+    <p><strong>Giới tính:</strong> {{ student.gioi_tinh }}</p>
+    <p><strong>Điện thoại:</strong> {{ student.so_dien_thoai }}</p>
+    <p><strong>Khoa:</strong> {{ student.khoa }}</p>
+    <p><strong>Ngành:</strong> {{ student.nganh }}</p>
+    <p><strong>Lớp:</strong> {{ student.lop }}</p>
+    <p><strong>Khóa học:</strong> {{ student.khoa_hoc }}</p>
+    <p><strong>Trạng thái:</strong> {{ student.trang_thai }}</p>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="card">
+    <h3>Học lực hiện tại</h3>
+    {% if standing %}
+      <p><strong>GPA tích lũy:</strong> {{ standing.gpa_tich_luy }}</p>
+      <p><strong>Xếp loại:</strong> {{ standing.xep_loai }}</p>
+      <p><strong>Cập nhật:</strong> {{ standing.updated_at|date:"d/m/Y H:i" }}</p>
+    {% else %}
+      <p>Chưa có dữ liệu học lực.</p>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <h3>GPA theo học kỳ</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Học kỳ</th>
+            <th>Năm học</th>
+            <th>GPA hệ 4</th>
+            <th>Tín chỉ tích lũy</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for snapshot in gpa_semesters %}
+            <tr>
+              <td>{{ snapshot.hoc_ky }}</td>
+              <td>{{ snapshot.nam_hoc }}</td>
+              <td>{{ snapshot.gpa_he_4 }}</td>
+              <td>{{ snapshot.tong_tin_chi_tich_luy }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4">Chưa có bản ghi GPA.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Lịch sử đăng ký học phần và điểm</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Học kỳ</th>
+          <th>Năm học</th>
+          <th>Học phần</th>
+          <th>Tín chỉ</th>
+          <th>Điểm chuyên cần</th>
+          <th>Điểm quá trình</th>
+          <th>Điểm thi</th>
+          <th>Điểm TK (10)</th>
+          <th>Điểm hệ 4</th>
+          <th>Điểm chữ</th>
+          <th>Lần học</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enrollment in enrollments %}
+          {% with latest_grade=enrollment.grades.first %}
+            <tr>
+              <td>{{ enrollment.hoc_ky }}</td>
+              <td>{{ enrollment.nam_hoc }}</td>
+              <td>{{ enrollment.course.ma_hp }} - {{ enrollment.course.ten_hp }}</td>
+              <td>{{ enrollment.course.so_tin_chi }}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_chuyen_can }}{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_qua_trinh }}{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_thi }}{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_tong_ket_10 }}{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_he_4 }}{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_chu }}{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.lan_hoc }}{% endif %}</td>
+            </tr>
+          {% endwith %}
+        {% empty %}
+          <tr>
+            <td colspan="11">Sinh viên chưa có đăng ký học phần.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
