@@ -1,16 +1,20 @@
 ﻿{% extends "base.html" %}
-{% block title %}Nhập điểm | SMS{% endblock %}
+{% block title %}Nhap va sua diem | SMS{% endblock %}
 
 {% block content %}
 <section class="card">
   <div class="card-head">
-    <h2>Nhập điểm học phần</h2>
+    <h2>Nhap/Sua diem hoc phan</h2>
   </div>
-  <p class="muted">Chọn sinh viên trước, danh sách đăng ký học phần sẽ lọc theo sinh viên đó.</p>
-  <p class="muted">Công thức: Chuyên cần 10% + Quá trình 30% + Thi 60%.</p>
+  <p class="muted">Chon sinh vien truoc, danh sach dang ky hoc phan se loc theo sinh vien do.</p>
+  <p class="muted">Cong thuc: Chuyen can 10% + Qua trinh 30% + Thi 60%.</p>
 
   <form method="post" class="grid-form grid-2">
     {% csrf_token %}
+    {% if next_url %}
+      <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
+
     {% for field in form %}
       <label>
         {{ field.label }}
@@ -21,8 +25,8 @@
       </label>
     {% endfor %}
     <div class="form-actions">
-      <button type="submit" class="btn primary">Lưu điểm và tính GPA</button>
-      <a class="btn ghost" href="{% url 'students:dashboard' %}">Hủy</a>
+      <button type="submit" class="btn primary">Luu diem va tinh GPA</button>
+      <a class="btn ghost" href="{% url 'students:dashboard' %}">Huy</a>
     </div>
   </form>
 </section>
@@ -39,6 +43,7 @@
       } else {
         url.searchParams.delete("student");
       }
+      url.searchParams.delete("enrollment");
       window.location.href = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "");
     });
   })();

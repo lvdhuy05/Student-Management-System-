@@ -1,10 +1,10 @@
-{% extends "base.html" %}
-{% block title %}Đăng ký học phần | SMS{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Dang ky hoc phan (quan tri) | SMS{% endblock %}
 
 {% block content %}
 <section class="card">
   <div class="card-head">
-    <h2>Tạo đăng ký học phần</h2>
+    <h2>Tao dang ky hoc phan cho sinh vien</h2>
   </div>
 
   <form method="post" class="grid-form grid-2">
@@ -19,8 +19,8 @@
       </label>
     {% endfor %}
     <div class="form-actions">
-      <button class="btn primary" type="submit">Lưu đăng ký</button>
-      <a class="btn ghost" href="{% url 'students:dashboard' %}">Hủy</a>
+      <button class="btn primary" type="submit">Luu dang ky</button>
+      <a class="btn ghost" href="{% url 'students:dashboard' %}">Huy</a>
     </div>
   </form>
 </section>

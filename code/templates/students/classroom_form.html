@@ -1,10 +1,11 @@
 ﻿{% extends "base.html" %}
-{% block title %}Tao hoc phan | SMS{% endblock %}
+{% block title %}Tao lop hoc phan | SMS{% endblock %}
 
 {% block content %}
 <section class="card">
   <div class="card-head">
-    <h2>Tao hoc phan</h2>
+    <h2>Tao lop hoc phan</h2>
+    <a class="btn ghost" href="{% url 'students:classroom_list' %}">Ve danh sach lop HP</a>
   </div>
 
   <form method="post" class="grid-form grid-2">
@@ -18,9 +19,10 @@
         {% endif %}
       </label>
     {% endfor %}
+
     <div class="form-actions">
-      <button class="btn primary" type="submit">Luu hoc phan</button>
-      <a class="btn ghost" href="{% url 'students:dashboard' %}">Huy</a>
+      <button type="submit" class="btn primary">Luu lop hoc phan</button>
+      <a class="btn ghost" href="{% url 'students:classroom_list' %}">Huy</a>
     </div>
   </form>
 </section>

@@ -1,60 +1,47 @@
-@startuml
-title SMS - Sequence Diagram (Nhap diem -> Tinh GPA -> Xep loai)
+﻿@startuml
+title SMS - Sequence Diagram (Giang vien diem danh va nhap diem)
 
-actor "Can bo dao tao" as Cb
-participant "Frontend Web" as UI
-participant "GradeController" as GradeCtl
-participant "AuthService" as Auth
+actor "Giang vien" as Teacher
+participant "Web UI" as UI
+participant "Django View" as View
+participant "Auth/RBAC" as Auth
+participant "AttendanceService" as AttSvc
 participant "GradeService" as GradeSvc
-participant "EnrollmentRepository" as EnrollRepo
-participant "GradeRepository" as GradeRepo
 participant "GPAService" as GpaSvc
-participant "RuleConfigRepository" as RuleRepo
-participant "GPASnapshotRepository" as GpaRepo
-participant "AuditLogService" as Audit
-database "PostgreSQL" as DB
+database "SQLite" as DB
 
-Cb -> UI: Nhap diem(ma_sv, ma_hp, hoc_ky, nam_hoc, diem)
-UI -> GradeCtl: POST /api/grades
-GradeCtl -> Auth: Kiem tra JWT + RBAC
-Auth --> GradeCtl: Hop le
-GradeCtl -> GradeSvc: nhapDiem(payload, actorId)
-GradeSvc -> EnrollRepo: findEnrollment(ma_sv, ma_hp, hoc_ky, nam_hoc)
-EnrollRepo -> DB: SELECT enrollment
-DB --> EnrollRepo: enrollment/null
-EnrollRepo --> GradeSvc: ket qua
+Teacher -> UI: Mo chi tiet lop hoc phan
+UI -> View: GET /classes/{id}
+View -> Auth: Kiem tra role + ownership lop
+Auth --> View: Hop le
+View -> DB: SELECT enrollments + grades + attendance
+DB --> View: Du lieu lop
+View --> UI: Render danh sach sinh vien
 
-alt Khong ton tai dang ky hoc phan
-  GradeSvc --> GradeCtl: 404 EnrollmentNotFound
-  GradeCtl --> UI: Response loi
-  UI --> Cb: Hien thi thong bao loi
-else Ton tai dang ky hoc phan
-  GradeSvc -> GradeSvc: Validate diem 0..10
-  GradeSvc -> GradeRepo: UPSERT diem + lan_hoc
-  GradeRepo -> DB: INSERT/UPDATE grades
-  DB --> GradeRepo: OK
-  GradeRepo --> GradeSvc: gradeSaved
+Teacher -> UI: Submit diem danh theo ngay hoc
+UI -> View: POST /classes/{id}/attendance
+View -> Auth: Kiem tra role + ownership lop
+Auth --> View: Hop le
+View -> AttSvc: diemDanhLop(classId, ngayHoc, rows)
+AttSvc -> DB: UPSERT attendance per enrollment
+DB --> AttSvc: OK
+AttSvc --> View: Thanh cong
+View --> UI: Thong bao da luu diem danh
 
-  GradeSvc -> GpaSvc: recalculate(ma_sv)
-  GpaSvc -> DB: SELECT diem moi nhat + tin chi
-  DB --> GpaSvc: dataset GPA
-  GpaSvc -> RuleRepo: layNguongXepLoai()
-  RuleRepo -> DB: SELECT quy_tac_xep_loai
-  DB --> RuleRepo: rules
-  RuleRepo --> GpaSvc: rules
-  GpaSvc -> GpaRepo: UPSERT gpa_hoc_ky + hoc_luc
-  GpaRepo -> DB: UPSERT snapshots
-  DB --> GpaRepo: OK
-  GpaRepo --> GpaSvc: OK
-  GpaSvc --> GradeSvc: gpa + xep_loai
-
-  GradeSvc -> Audit: ghiLog(actorId, SUA_DIEM, payload)
-  Audit -> DB: INSERT audit_log
-  DB --> Audit: OK
-
-  GradeSvc --> GradeCtl: 200 (diem, gpa, xep_loai)
-  GradeCtl --> UI: Response thanh cong
-  UI --> Cb: Hien thi ket qua cap nhat
-end
+Teacher -> UI: Nhap/Sua diem cho 1 sinh vien
+UI -> View: POST /grades/input
+View -> Auth: Kiem tra role + ownership enrollment
+Auth --> View: Hop le
+View -> GradeSvc: nhapSuaDiem(enrollmentId, lanHoc, scores)
+GradeSvc -> DB: INSERT/UPDATE grade
+DB --> GradeSvc: gradeSaved
+GradeSvc -> GpaSvc: recalculate(student)
+GpaSvc -> DB: SELECT latest grade by course
+DB --> GpaSvc: grade dataset
+GpaSvc -> DB: UPSERT GPA semester + academic standing
+DB --> GpaSvc: OK
+GpaSvc --> GradeSvc: gpa + xep_loai
+GradeSvc --> View: grade + gpa result
+View --> UI: Thong bao cap nhat thanh cong
 
 @enduml

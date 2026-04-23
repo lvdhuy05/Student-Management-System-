@@ -1,8 +1,8 @@
-from decimal import Decimal
+﻿from decimal import Decimal
 
 from django.test import TestCase
 
-from .models import AcademicStanding, Course, Enrollment, Grade, Student
+from .models import AcademicStanding, Classroom, Course, Enrollment, Grade, Student
 from .services import recalculate_gpa_for_student
 
 
@@ -21,7 +21,47 @@ class GradeCalculationTests(TestCase):
             khoa_hoc="2023-2027",
         )
         self.course = Course.objects.create(ma_hp="CS101", ten_hp="Nhap mon lap trinh", so_tin_chi=3)
-        self.enrollment = Enrollment.objects.create(student=self.student, course=self.course, hoc_ky="1", nam_hoc="2025-2026")
+        self.classroom = Classroom.objects.create(
+            ma_lop_hp="LHP-CS101-01",
+            course=self.course,
+            hoc_ky="1",
+            nam_hoc="2025-2026",
+            phong_hoc="A101",
+            lich_hoc="Thu 2",
+            si_so_toi_da=60,
+            trang_thai=Classroom.Status.OPEN,
+        )
+        self.enrollment = Enrollment.objects.create(
+            student=self.student,
+            classroom=self.classroom,
+            course=self.course,
+            hoc_ky="1",
+            nam_hoc="2025-2026",
+        )
+
+    def test_enrollment_syncs_course_and_term_from_classroom(self):
+        other_course = Course.objects.create(ma_hp="CS102", ten_hp="Co so du lieu", so_tin_chi=3)
+        other_classroom = Classroom.objects.create(
+            ma_lop_hp="LHP-CS102-01",
+            course=other_course,
+            hoc_ky="2",
+            nam_hoc="2025-2026",
+            phong_hoc="A102",
+            lich_hoc="Thu 3",
+            si_so_toi_da=60,
+            trang_thai=Classroom.Status.OPEN,
+        )
+        enrollment = Enrollment.objects.create(
+            student=self.student,
+            classroom=other_classroom,
+            course=self.course,
+            hoc_ky="9",
+            nam_hoc="1900-1901",
+        )
+
+        self.assertEqual(enrollment.course_id, other_classroom.course_id)
+        self.assertEqual(enrollment.hoc_ky, other_classroom.hoc_ky)
+        self.assertEqual(enrollment.nam_hoc, other_classroom.nam_hoc)
 
     def test_grade_auto_calculated_on_save(self):
         grade = Grade.objects.create(
@@ -56,4 +96,4 @@ class GradeCalculationTests(TestCase):
 
         self.assertEqual(result["gpa"], Decimal("4.00"))
         self.assertEqual(standing.gpa_tich_luy, Decimal("4.00"))
-        self.assertEqual(standing.xep_loai, "Xuất sắc")
+        self.assertEqual(standing.xep_loai, "Xuat sac")

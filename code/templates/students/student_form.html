@@ -1,11 +1,11 @@
-{% extends "base.html" %}
-{% block title %}{% if mode == "create" %}Thêm sinh viên{% else %}Cập nhật sinh viên{% endif %} | SMS{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}{% if mode == "create" %}Them sinh vien{% else %}Cap nhat sinh vien{% endif %} | SMS{% endblock %}
 
 {% block content %}
 <section class="card">
   <div class="card-head">
-    <h2>{% if mode == "create" %}Thêm sinh viên{% else %}Cập nhật sinh viên {{ student.ma_sv }}{% endif %}</h2>
-    <a class="btn ghost" href="{% url 'students:student_list' %}">Quay lại danh sách</a>
+    <h2>{% if mode == "create" %}Them sinh vien{% else %}Cap nhat sinh vien {{ student.ma_sv }}{% endif %}</h2>
+    <a class="btn ghost" href="{% url 'students:student_list' %}">Quay lai danh sach</a>
   </div>
 
   <form method="post" class="grid-form grid-2">
@@ -17,11 +17,11 @@
         {% if field.errors %}
           <small class="error-text">{{ field.errors|join:", " }}</small>
         {% endif %}
-    </label>
+      </label>
     {% endfor %}
     <div class="form-actions">
-      <button type="submit" class="btn primary">Lưu</button>
-      <a class="btn ghost" href="{% url 'students:student_list' %}">Hủy</a>
+      <button type="submit" class="btn primary">Luu</button>
+      <a class="btn ghost" href="{% url 'students:student_list' %}">Huy</a>
     </div>
   </form>
 </section>

@@ -1,3 +1,4 @@
+﻿from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -6,8 +7,10 @@ from django.db import transaction
 
 from students.models import (
     AcademicStanding,
+    Attendance,
     AuditLog,
     ClassificationRule,
+    Classroom,
     Course,
     Enrollment,
     GPASemester,
@@ -30,24 +33,23 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        reset = options["reset"]
-        if reset:
+        if options["reset"]:
             self._reset_business_data()
 
         ensure_default_classification_rules()
-        accounts = self._seed_accounts()
+        accounts = self._seed_accounts_and_students()
         self._seed_business_data()
 
         self.stdout.write(self.style.SUCCESS("Seed du lieu demo thanh cong."))
         self.stdout.write(self.style.WARNING("Tai khoan demo:"))
         for account in accounts:
-            self.stdout.write(
-                f"- {account['username']} / {account['password']} ({account['role']})"
-            )
+            self.stdout.write(f"- {account['username']} / {account['password']} ({account['role']})")
 
     def _reset_business_data(self):
+        Attendance.objects.all().delete()
         Grade.objects.all().delete()
         Enrollment.objects.all().delete()
+        Classroom.objects.all().delete()
         GPASemester.objects.all().delete()
         AcademicStanding.objects.all().delete()
         ClassificationRule.objects.all().delete()
@@ -55,9 +57,28 @@ class Command(BaseCommand):
         Course.objects.all().delete()
         Student.objects.all().delete()
 
-    def _seed_accounts(self):
+    def _upsert_user(self, *, username: str, password: str, role: str, is_staff: bool, is_superuser: bool, student=None):
         User = get_user_model()
-        old_demo_usernames = ["admin_sms", "daotao01", "giangvien01", "covan01"]
+        user, _ = User.objects.get_or_create(username=username)
+        user.is_staff = is_staff
+        user.is_superuser = is_superuser
+        user.is_active = True
+        user.set_password(password)
+        user.save()
+
+        UserProfile.objects.update_or_create(
+            user=user,
+            defaults={
+                "role": role,
+                "status": UserProfile.Status.ACTIVE,
+                "student": student,
+            },
+        )
+        return user
+
+    def _seed_accounts_and_students(self):
+        User = get_user_model()
+        old_demo_usernames = ["admin_sms", "daotao", "daotao01", "covan", "covan01", "giangvien01"]
         User.objects.filter(username__in=old_demo_usernames).delete()
 
         account_specs = [
@@ -69,13 +90,6 @@ class Command(BaseCommand):
                 "is_superuser": True,
             },
             {
-                "username": "daotao",
-                "password": "123456",
-                "role": UserProfile.Role.DAO_TAO,
-                "is_staff": True,
-                "is_superuser": False,
-            },
-            {
                 "username": "giangvien",
                 "password": "123456",
                 "role": UserProfile.Role.GIANG_VIEN,
@@ -83,42 +97,23 @@ class Command(BaseCommand):
                 "is_superuser": False,
             },
             {
-                "username": "covan",
+                "username": "giangvien2",
                 "password": "123456",
-                "role": UserProfile.Role.CO_VAN,
+                "role": UserProfile.Role.GIANG_VIEN,
                 "is_staff": False,
                 "is_superuser": False,
             },
         ]
 
         for spec in account_specs:
-            user, created = User.objects.get_or_create(
+            self._upsert_user(
                 username=spec["username"],
-                defaults={
-                    "is_staff": spec["is_staff"],
-                    "is_superuser": spec["is_superuser"],
-                    "is_active": True,
-                },
+                password=spec["password"],
+                role=spec["role"],
+                is_staff=spec["is_staff"],
+                is_superuser=spec["is_superuser"],
             )
-            if created:
-                user.set_password(spec["password"])
-            else:
-                user.is_staff = spec["is_staff"]
-                user.is_superuser = spec["is_superuser"]
-                user.is_active = True
-                user.set_password(spec["password"])
-            user.save()
 
-            UserProfile.objects.update_or_create(
-                user=user,
-                defaults={
-                    "role": spec["role"],
-                    "status": UserProfile.Status.ACTIVE,
-                },
-            )
-        return account_specs
-
-    def _seed_business_data(self):
         students_data = [
             {
                 "ma_sv": "SV001",
@@ -170,65 +165,141 @@ class Command(BaseCommand):
             },
         ]
 
-        courses_data = [
-            {"ma_hp": "CS101", "ten_hp": "Nhập môn lập trình", "so_tin_chi": 3},
-            {"ma_hp": "CS102", "ten_hp": "Cơ sở dữ liệu", "so_tin_chi": 3},
-            {"ma_hp": "MATH101", "ten_hp": "Giải tích 1", "so_tin_chi": 4},
-            {"ma_hp": "ENG101", "ten_hp": "Tiếng Anh học thuật", "so_tin_chi": 2},
-        ]
-
-        students = {}
         for item in students_data:
-            student, _ = Student.objects.update_or_create(
-                ma_sv=item["ma_sv"],
-                defaults=item,
+            student, _ = Student.objects.update_or_create(ma_sv=item["ma_sv"], defaults=item)
+            username = item["ma_sv"].lower()
+            self._upsert_user(
+                username=username,
+                password="123456",
+                role=UserProfile.Role.SINH_VIEN,
+                is_staff=False,
+                is_superuser=False,
+                student=student,
             )
-            students[item["ma_sv"]] = student
+            account_specs.append(
+                {
+                    "username": username,
+                    "password": "123456",
+                    "role": UserProfile.Role.SINH_VIEN,
+                }
+            )
 
+        return account_specs
+
+    def _seed_business_data(self):
+        User = get_user_model()
+        students = {student.ma_sv: student for student in Student.objects.all()}
+
+        courses_data = [
+            {"ma_hp": "CS101", "ten_hp": "Nhap mon lap trinh", "so_tin_chi": 3},
+            {"ma_hp": "CS102", "ten_hp": "Co so du lieu", "so_tin_chi": 3},
+            {"ma_hp": "MATH101", "ten_hp": "Giai tich 1", "so_tin_chi": 4},
+            {"ma_hp": "ENG101", "ten_hp": "Tieng Anh hoc thuat", "so_tin_chi": 2},
+        ]
         courses = {}
         for item in courses_data:
-            course, _ = Course.objects.update_or_create(
-                ma_hp=item["ma_hp"],
-                defaults=item,
-            )
+            course, _ = Course.objects.update_or_create(ma_hp=item["ma_hp"], defaults=item)
             courses[item["ma_hp"]] = course
 
-        enroll_specs = [
-            ("SV001", "CS101", "1", "2025-2026"),
-            ("SV001", "CS102", "1", "2025-2026"),
-            ("SV001", "ENG101", "2", "2025-2026"),
-            ("SV002", "CS101", "1", "2025-2026"),
-            ("SV002", "MATH101", "1", "2025-2026"),
-            ("SV003", "ENG101", "1", "2024-2025"),
-            ("SV004", "CS101", "1", "2025-2026"),
-            ("SV004", "ENG101", "1", "2025-2026"),
+        gv1 = User.objects.get(username="giangvien")
+        gv2 = User.objects.get(username="giangvien2")
+
+        classroom_specs = [
+            {
+                "ma_lop_hp": "LHP-CS101-01",
+                "course": courses["CS101"],
+                "giang_vien": gv1,
+                "hoc_ky": "1",
+                "nam_hoc": "2025-2026",
+                "phong_hoc": "A301",
+                "lich_hoc": "Thu 2-4, tiet 1-3",
+                "si_so_toi_da": 60,
+                "trang_thai": Classroom.Status.OPEN,
+            },
+            {
+                "ma_lop_hp": "LHP-CS102-01",
+                "course": courses["CS102"],
+                "giang_vien": gv1,
+                "hoc_ky": "1",
+                "nam_hoc": "2025-2026",
+                "phong_hoc": "A402",
+                "lich_hoc": "Thu 3-5, tiet 4-6",
+                "si_so_toi_da": 60,
+                "trang_thai": Classroom.Status.OPEN,
+            },
+            {
+                "ma_lop_hp": "LHP-MATH101-01",
+                "course": courses["MATH101"],
+                "giang_vien": gv2,
+                "hoc_ky": "1",
+                "nam_hoc": "2025-2026",
+                "phong_hoc": "B201",
+                "lich_hoc": "Thu 2-6, tiet 7-9",
+                "si_so_toi_da": 80,
+                "trang_thai": Classroom.Status.OPEN,
+            },
+            {
+                "ma_lop_hp": "LHP-ENG101-01",
+                "course": courses["ENG101"],
+                "giang_vien": gv2,
+                "hoc_ky": "2",
+                "nam_hoc": "2025-2026",
+                "phong_hoc": "C105",
+                "lich_hoc": "Thu 5, tiet 1-3",
+                "si_so_toi_da": 80,
+                "trang_thai": Classroom.Status.OPEN,
+            },
+        ]
+
+        classrooms = {}
+        for spec in classroom_specs:
+            classroom, _ = Classroom.objects.update_or_create(
+                ma_lop_hp=spec["ma_lop_hp"],
+                defaults=spec,
+            )
+            classrooms[classroom.ma_lop_hp] = classroom
+
+        enrollment_specs = [
+            ("SV001", "LHP-CS101-01"),
+            ("SV001", "LHP-CS102-01"),
+            ("SV001", "LHP-ENG101-01"),
+            ("SV002", "LHP-CS101-01"),
+            ("SV002", "LHP-MATH101-01"),
+            ("SV003", "LHP-ENG101-01"),
+            ("SV004", "LHP-CS101-01"),
+            ("SV004", "LHP-ENG101-01"),
         ]
 
         enrollments = {}
-        for ma_sv, ma_hp, hoc_ky, nam_hoc in enroll_specs:
+        for ma_sv, ma_lop_hp in enrollment_specs:
+            student = students[ma_sv]
+            classroom = classrooms[ma_lop_hp]
             enrollment, _ = Enrollment.objects.update_or_create(
-                student=students[ma_sv],
-                course=courses[ma_hp],
-                hoc_ky=hoc_ky,
-                nam_hoc=nam_hoc,
-                defaults={"trang_thai": Enrollment.Status.DANG_HOC},
+                student=student,
+                course=classroom.course,
+                hoc_ky=classroom.hoc_ky,
+                nam_hoc=classroom.nam_hoc,
+                defaults={
+                    "classroom": classroom,
+                    "trang_thai": Enrollment.Status.DANG_HOC,
+                },
             )
-            enrollments[(ma_sv, ma_hp, hoc_ky, nam_hoc)] = enrollment
+            enrollments[(ma_sv, ma_lop_hp)] = enrollment
 
         grades_data = [
-            ("SV001", "CS101", "1", "2025-2026", Decimal("9.0"), Decimal("8.0"), Decimal("7.0"), 1),
-            ("SV001", "CS102", "1", "2025-2026", Decimal("10.0"), Decimal("9.0"), Decimal("8.5"), 1),
-            ("SV001", "ENG101", "2", "2025-2026", Decimal("8.0"), Decimal("7.0"), Decimal("7.5"), 1),
-            ("SV002", "CS101", "1", "2025-2026", Decimal("6.0"), Decimal("5.0"), Decimal("4.5"), 1),
-            ("SV002", "CS101", "1", "2025-2026", Decimal("8.0"), Decimal("7.0"), Decimal("6.5"), 2),
-            ("SV002", "MATH101", "1", "2025-2026", Decimal("7.0"), Decimal("6.0"), Decimal("5.0"), 1),
-            ("SV003", "ENG101", "1", "2024-2025", Decimal("9.0"), Decimal("8.5"), Decimal("8.0"), 1),
-            ("SV004", "CS101", "1", "2025-2026", Decimal("5.0"), Decimal("4.0"), Decimal("4.0"), 1),
-            ("SV004", "ENG101", "1", "2025-2026", Decimal("7.0"), Decimal("6.5"), Decimal("7.0"), 1),
+            ("SV001", "LHP-CS101-01", Decimal("9.0"), Decimal("8.0"), Decimal("7.0"), 1),
+            ("SV001", "LHP-CS102-01", Decimal("10.0"), Decimal("9.0"), Decimal("8.5"), 1),
+            ("SV001", "LHP-ENG101-01", Decimal("8.0"), Decimal("7.0"), Decimal("7.5"), 1),
+            ("SV002", "LHP-CS101-01", Decimal("6.0"), Decimal("5.0"), Decimal("4.5"), 1),
+            ("SV002", "LHP-CS101-01", Decimal("8.0"), Decimal("7.0"), Decimal("6.5"), 2),
+            ("SV002", "LHP-MATH101-01", Decimal("7.0"), Decimal("6.0"), Decimal("5.0"), 1),
+            ("SV003", "LHP-ENG101-01", Decimal("9.0"), Decimal("8.5"), Decimal("8.0"), 1),
+            ("SV004", "LHP-CS101-01", Decimal("5.0"), Decimal("4.0"), Decimal("4.0"), 1),
+            ("SV004", "LHP-ENG101-01", Decimal("7.0"), Decimal("6.5"), Decimal("7.0"), 1),
         ]
 
-        for ma_sv, ma_hp, hoc_ky, nam_hoc, diem_cc, diem_qt, diem_thi, lan_hoc in grades_data:
-            enrollment = enrollments[(ma_sv, ma_hp, hoc_ky, nam_hoc)]
+        for ma_sv, ma_lop_hp, diem_cc, diem_qt, diem_thi, lan_hoc in grades_data:
+            enrollment = enrollments[(ma_sv, ma_lop_hp)]
             Grade.objects.update_or_create(
                 enrollment=enrollment,
                 lan_hoc=lan_hoc,
@@ -236,6 +307,19 @@ class Command(BaseCommand):
                     "diem_chuyen_can": diem_cc,
                     "diem_qua_trinh": diem_qt,
                     "diem_thi": diem_thi,
+                },
+            )
+
+        attendance_day = date(2026, 4, 20)
+        for enrollment in enrollments.values():
+            Attendance.objects.update_or_create(
+                classroom=enrollment.classroom,
+                enrollment=enrollment,
+                ngay_hoc=attendance_day,
+                defaults={
+                    "trang_thai": Attendance.Status.PRESENT,
+                    "ghi_chu": "",
+                    "updated_by": enrollment.classroom.giang_vien,
                 },
             )
 

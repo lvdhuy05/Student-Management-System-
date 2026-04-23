@@ -1,54 +1,141 @@
-{% load static %}
+﻿{% load static %}
 <!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}SMS - Quản lý Sinh viên{% endblock %}</title>
+  <title>{% block title %}SMS - Student Management{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
-  <div class="bg-shape bg-shape-a"></div>
-  <div class="bg-shape bg-shape-b"></div>
+{% if user.is_authenticated %}
+  {% url 'students:dashboard' as url_dashboard %}
+  {% url 'students:student_list' as url_student_list %}
+  {% url 'students:course_create' as url_course_create %}
+  {% url 'students:classroom_list' as url_classroom_list %}
+  {% url 'students:enrollment_create' as url_enrollment_create %}
+  {% url 'students:grade_input' as url_grade_input %}
+  {% url 'students:my_classes' as url_my_classes %}
+  {% url 'students:my_enrollments' as url_my_enrollments %}
+  {% url 'students:my_transcript' as url_my_transcript %}
 
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <a class="brand" href="{% if user.is_authenticated %}{% url 'students:dashboard' %}{% else %}{% url 'login' %}{% endif %}">SMS</a>
-      {% if user.is_authenticated %}
-        <nav class="menu">
-          <a href="{% url 'students:dashboard' %}">Trang chủ</a>
-          <a href="{% url 'students:student_list' %}">Sinh viên</a>
-          {% if can_input_grade %}
-            <a href="{% url 'students:grade_input' %}">Nhập điểm</a>
-          {% endif %}
-          {% if can_manage_students %}
-            <a href="{% url 'students:course_create' %}">Học phần</a>
-            <a href="{% url 'students:enrollment_create' %}">Đăng ký học phần</a>
-          {% endif %}
-        </nav>
-        <div class="user-panel">
-          <span class="user-role">{{ user.username }} | {{ current_role }}</span>
-          <form method="post" action="{% url 'logout' %}" class="inline-form">
-            {% csrf_token %}
-            <button type="submit" class="btn tiny ghost">Đăng xuất</button>
-          </form>
+  <div class="app-shell {% if is_admin_role %}role-admin{% elif is_student_role %}role-student{% else %}role-teacher{% endif %}">
+    <aside class="app-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">SMS</div>
+        <div>
+          <h2>
+            {% if is_admin_role %}Student{% elif is_student_role %}Sinh vien{% else %}Giang vien{% endif %}
+          </h2>
+          <p>
+            {% if is_admin_role %}Management System{% elif is_student_role %}Student Portal{% else %}Teacher Portal{% endif %}
+          </p>
         </div>
-      {% else %}
-        <a class="btn tiny primary" href="{% url 'login' %}">Đăng nhập</a>
-      {% endif %}
-    </div>
-  </header>
-
-  <main class="container content">
-    {% if messages %}
-      <div class="messages">
-        {% for message in messages %}
-          <div class="message {{ message.tags }}">{{ message }}</div>
-        {% endfor %}
       </div>
-    {% endif %}
 
-    {% block content %}{% endblock %}
-  </main>
+      <nav class="sidebar-nav">
+        <a class="{% if request.path == url_dashboard %}active{% endif %}" href="{{ url_dashboard }}">
+          <span class="nav-icon">▦</span>
+          <span class="nav-label">Trang chu <small>Tong quan</small></span>
+        </a>
+
+        {% if is_admin_role %}
+          <a class="{% if '/students/' in request.path %}active{% endif %}" href="{{ url_student_list }}">
+            <span class="nav-icon">👥</span>
+            <span class="nav-label">Quan ly sinh vien <small>Danh sach sinh vien</small></span>
+          </a>
+          <a class="{% if '/courses/' in request.path %}active{% endif %}" href="{{ url_course_create }}">
+            <span class="nav-icon">📘</span>
+            <span class="nav-label">Quan ly mon hoc <small>Tao hoc phan</small></span>
+          </a>
+          <a class="{% if '/classes/' in request.path %}active{% endif %}" href="{{ url_classroom_list }}">
+            <span class="nav-icon">🏫</span>
+            <span class="nav-label">Lop hoc phan <small>Danh sach lop</small></span>
+          </a>
+          <a class="{% if '/enrollments/' in request.path %}active{% endif %}" href="{{ url_enrollment_create }}">
+            <span class="nav-icon">📝</span>
+            <span class="nav-label">Dang ky hoc phan <small>Tao dang ky</small></span>
+          </a>
+          <a class="{% if '/grades/' in request.path %}active{% endif %}" href="{{ url_grade_input }}">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Nhap diem <small>Quan ly diem</small></span>
+          </a>
+        {% endif %}
+
+        {% if is_student_role %}
+          <a class="{% if '/my/enrollments/' in request.path %}active{% endif %}" href="{{ url_my_enrollments }}">
+            <span class="nav-icon">🧾</span>
+            <span class="nav-label">Dang ky mon hoc <small>Chon lop hoc phan</small></span>
+          </a>
+          <a class="{% if '/reports/my-transcript/' in request.path or '/reports/transcript/' in request.path %}active{% endif %}" href="{{ url_my_transcript }}">
+            <span class="nav-icon">📚</span>
+            <span class="nav-label">Bang diem <small>Ket qua hoc tap</small></span>
+          </a>
+        {% endif %}
+
+        {% if is_teacher_role %}
+          <a class="{% if '/classes/my/' in request.path or '/classes/' in request.path %}active{% endif %}" href="{{ url_my_classes }}">
+            <span class="nav-icon">📖</span>
+            <span class="nav-label">Lop cua toi <small>Danh sach lop phu trach</small></span>
+          </a>
+          <a class="{% if '/grades/' in request.path %}active{% endif %}" href="{{ url_grade_input }}">
+            <span class="nav-icon">✍</span>
+            <span class="nav-label">Nhap diem <small>Quan ly diem sinh vien</small></span>
+          </a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="avatar">{{ user.username|slice:":1"|upper }}</div>
+        <div>
+          <strong>{{ user.username }}</strong>
+          <small>{{ user.email|default:"account@sms.local" }}</small>
+        </div>
+        <form method="post" action="{% url 'logout' %}" class="inline-form">
+          {% csrf_token %}
+          <button type="submit" class="logout-btn">⏻</button>
+        </form>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="app-topbar">
+        <div>
+          <h1>{% block page_title %}He thong quan ly sinh vien{% endblock %}</h1>
+          <p>{% block page_subtitle %}Van hanh theo role {{ current_role_label|default:current_role }}{% endblock %}</p>
+        </div>
+        <div class="topbar-tools">
+          <span class="role-pill">{{ current_role_label|default:current_role }}</span>
+          <button class="notify-btn" type="button">🔔</button>
+        </div>
+      </header>
+
+      <main class="app-content">
+{% else %}
+  <div class="auth-layout">
+    <header class="auth-topbar">
+      <a class="auth-brand" href="{% url 'login' %}">SMS</a>
+    </header>
+    <main class="auth-content">
+{% endif %}
+
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+
+{% if user.is_authenticated %}
+      </main>
+    </div>
+  </div>
+{% else %}
+    </main>
+  </div>
+{% endif %}
 </body>
 </html>

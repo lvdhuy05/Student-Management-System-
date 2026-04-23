@@ -1,5 +1,5 @@
 ﻿{% extends "base.html" %}
-{% block title %}Chi tiết sinh viên {{ student.ma_sv }} | SMS{% endblock %}
+{% block title %}Chi tiet sinh vien {{ student.ma_sv }} | SMS{% endblock %}
 
 {% block content %}
 <section class="card">
@@ -7,47 +7,47 @@
     <h2>{{ student.ho_ten }} ({{ student.ma_sv }})</h2>
     <div class="actions">
       {% if can_manage_students %}
-        <a class="btn ghost" href="{% url 'students:student_update' student.ma_sv %}">Sửa thông tin</a>
+        <a class="btn ghost" href="{% url 'students:student_update' student.ma_sv %}">Sua thong tin</a>
       {% endif %}
-      <a class="btn primary" href="{% url 'students:transcript_report' student.ma_sv %}">Xem báo cáo bảng điểm</a>
+      <a class="btn primary" href="{% url 'students:transcript_report' student.ma_sv %}">Xem bao cao bang diem</a>
     </div>
   </div>
 
   <div class="info-grid">
     <p><strong>Email:</strong> {{ student.email }}</p>
-    <p><strong>Ngày sinh:</strong> {{ student.ngay_sinh|date:"d/m/Y" }}</p>
-    <p><strong>Giới tính:</strong> {{ student.gioi_tinh }}</p>
-    <p><strong>Điện thoại:</strong> {{ student.so_dien_thoai }}</p>
+    <p><strong>Ngay sinh:</strong> {{ student.ngay_sinh|date:"d/m/Y" }}</p>
+    <p><strong>Gioi tinh:</strong> {{ student.gioi_tinh }}</p>
+    <p><strong>Dien thoai:</strong> {{ student.so_dien_thoai }}</p>
     <p><strong>Khoa:</strong> {{ student.khoa }}</p>
-    <p><strong>Ngành:</strong> {{ student.nganh }}</p>
-    <p><strong>Lớp:</strong> {{ student.lop }}</p>
-    <p><strong>Khóa học:</strong> {{ student.khoa_hoc }}</p>
-    <p><strong>Trạng thái:</strong> {{ student.trang_thai }}</p>
+    <p><strong>Nganh:</strong> {{ student.nganh }}</p>
+    <p><strong>Lop:</strong> {{ student.lop }}</p>
+    <p><strong>Khoa hoc:</strong> {{ student.khoa_hoc }}</p>
+    <p><strong>Trang thai:</strong> {{ student.get_trang_thai_display }}</p>
   </div>
 </section>
 
 <section class="stats-grid">
   <article class="card">
-    <h3>Học lực hiện tại</h3>
+    <h3>Hoc luc hien tai</h3>
     {% if standing %}
-      <p><strong>GPA tích lũy:</strong> {{ standing.gpa_tich_luy }}</p>
-      <p><strong>Xếp loại:</strong> {{ standing.xep_loai }}</p>
-      <p><strong>Cập nhật:</strong> {{ standing.updated_at|date:"d/m/Y H:i" }}</p>
+      <p><strong>GPA tich luy:</strong> {{ standing.gpa_tich_luy }}</p>
+      <p><strong>Xep loai:</strong> {{ standing.xep_loai }}</p>
+      <p><strong>Cap nhat:</strong> {{ standing.updated_at|date:"d/m/Y H:i" }}</p>
     {% else %}
-      <p>Chưa có dữ liệu học lực.</p>
+      <p>Chua co du lieu hoc luc.</p>
     {% endif %}
   </article>
 
   <article class="card">
-    <h3>GPA theo học kỳ</h3>
+    <h3>GPA theo hoc ky</h3>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Học kỳ</th>
-            <th>Năm học</th>
-            <th>GPA hệ 4</th>
-            <th>Tín chỉ tích lũy</th>
+            <th>Hoc ky</th>
+            <th>Nam hoc</th>
+            <th>GPA he 4</th>
+            <th>Tin chi tich luy</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +60,7 @@
             </tr>
           {% empty %}
             <tr>
-              <td colspan="4">Chưa có bản ghi GPA.</td>
+              <td colspan="4">Chua co ban ghi GPA.</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -71,24 +71,25 @@
 
 <section class="card">
   <div class="card-head">
-    <h2>Lịch sử đăng ký học phần và điểm</h2>
+    <h2>Lich su dang ky hoc phan va diem</h2>
   </div>
 
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Học kỳ</th>
-          <th>Năm học</th>
-          <th>Học phần</th>
-          <th>Tín chỉ</th>
-          <th>Điểm chuyên cần</th>
-          <th>Điểm quá trình</th>
-          <th>Điểm thi</th>
-          <th>Điểm TK (10)</th>
-          <th>Điểm hệ 4</th>
-          <th>Điểm chữ</th>
-          <th>Lần học</th>
+          <th>Hoc ky</th>
+          <th>Nam hoc</th>
+          <th>Lop HP</th>
+          <th>Hoc phan</th>
+          <th>Tin chi</th>
+          <th>Diem CC</th>
+          <th>Diem QT</th>
+          <th>Diem thi</th>
+          <th>Diem TK (10)</th>
+          <th>Diem he 4</th>
+          <th>Diem chu</th>
+          <th>Lan hoc</th>
         </tr>
       </thead>
       <tbody>
@@ -97,6 +98,7 @@
             <tr>
               <td>{{ enrollment.hoc_ky }}</td>
               <td>{{ enrollment.nam_hoc }}</td>
+              <td>{% if enrollment.classroom %}{{ enrollment.classroom.ma_lop_hp }}{% else %}-{% endif %}</td>
               <td>{{ enrollment.course.ma_hp }} - {{ enrollment.course.ten_hp }}</td>
               <td>{{ enrollment.course.so_tin_chi }}</td>
               <td>{% if latest_grade %}{{ latest_grade.diem_chuyen_can }}{% endif %}</td>
@@ -110,7 +112,7 @@
           {% endwith %}
         {% empty %}
           <tr>
-            <td colspan="11">Sinh viên chưa có đăng ký học phần.</td>
+            <td colspan="12">Sinh vien chua co dang ky hoc phan.</td>
           </tr>
         {% endfor %}
       </tbody>

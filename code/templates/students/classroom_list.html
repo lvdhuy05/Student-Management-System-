@@ -1,0 +1,46 @@
+﻿{% extends "base.html" %}
+{% block title %}Danh sach lop hoc phan | SMS{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>Danh sach lop hoc phan</h2>
+    <a class="btn primary" href="{% url 'students:classroom_create' %}">+ Tao lop hoc phan</a>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Ma lop HP</th>
+          <th>Hoc phan</th>
+          <th>Giang vien</th>
+          <th>Hoc ky</th>
+          <th>Nam hoc</th>
+          <th>Si so</th>
+          <th>Trang thai</th>
+          <th>Thao tac</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for classroom in classrooms %}
+          <tr>
+            <td>{{ classroom.ma_lop_hp }}</td>
+            <td>{{ classroom.course.ma_hp }} - {{ classroom.course.ten_hp }}</td>
+            <td>{% if classroom.giang_vien %}{{ classroom.giang_vien.username }}{% else %}-{% endif %}</td>
+            <td>{{ classroom.hoc_ky }}</td>
+            <td>{{ classroom.nam_hoc }}</td>
+            <td>{{ classroom.student_count }} / {{ classroom.si_so_toi_da }}</td>
+            <td>{{ classroom.get_trang_thai_display }}</td>
+            <td><a class="btn tiny" href="{% url 'students:classroom_detail' classroom.id %}">Xem lop</a></td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8">Chua co lop hoc phan.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

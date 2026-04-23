@@ -1,146 +1,87 @@
-# 03 - Yeu cau chuc nang he thong quan ly sinh vien
+﻿# 03 - Yeu cau chuc nang he thong quan ly sinh vien
 
 ## 1. Muc tieu
-Xay dung he thong quan ly sinh vien cho phong dao tao, tap trung vao 5 nhom chuc nang:
-- Them / sua / xoa sinh vien
-- Nhap diem, tinh GPA
-- Xep loai hoc luc
-- Tim kiem sinh vien
-- Xuat bao cao
+Xay dung he thong quan ly sinh vien voi 3 role chinh:
+- `ADMIN`: quan tri toan bo he thong
+- `SINH_VIEN`: xem bang diem, dang ky hoc phan, xem mon da dang ky
+- `GIANG_VIEN`: quan ly lop cua toi, diem danh, nhap/sua diem cho sinh vien trong lop
 
-## 2. Doi tuong su dung
-- Quan tri he thong: quan ly tai khoan, phan quyen.
-- Can bo dao tao: quan ly ho so sinh vien, nhap/sua diem, xuat bao cao.
-- Giang vien: nhap diem hoc phan duoc phan cong.
-- Co van hoc tap (read-only): tra cuu thong tin sinh vien, ket qua hoc tap.
+## 2. Pham vi nghiep vu
+- Quan tri sinh vien: them/sua/xoa mem, tim kiem
+- Quan tri hoc phan va lop hoc phan
+- Dang ky hoc phan theo lop HP
+- Nhap/sua diem va tinh GPA tu dong
+- Diem danh theo buoi hoc
+- Bao cao bang diem ca nhan va xuat CSV
 
 ## 3. Thuc the du lieu chinh
-- SinhVien(ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, khoa, nganh, lop, khoa_hoc, trang_thai)
-- HocPhan(ma_hp, ten_hp, so_tin_chi)
-- DangKyHocPhan(id, ma_sv, ma_hp, hoc_ky, nam_hoc)
-- Diem(id, dang_ky_id, diem_qua_trinh, diem_thi, diem_tong_ket_10, diem_he_4, diem_chu, lan_hoc)
-- GPAHocKy(id, ma_sv, hoc_ky, nam_hoc, gpa_he_4, tong_tin_chi_tich_luy)
-- NguoiDung(id, username, vai_tro, trang_thai)
+- `UserProfile(user, role, status, student?)`
+- `Student(ma_sv, ho_ten, ..., trang_thai)`
+- `Course(ma_hp, ten_hp, so_tin_chi)`
+- `Classroom(ma_lop_hp, course, giang_vien, hoc_ky, nam_hoc, si_so_toi_da, trang_thai)`
+- `Enrollment(student, classroom, course, hoc_ky, nam_hoc, trang_thai)`
+- `Grade(enrollment, diem_chuyen_can, diem_qua_trinh, diem_thi, diem_tong_ket_10, diem_he_4, diem_chu, lan_hoc)`
+- `Attendance(classroom, enrollment, ngay_hoc, trang_thai, ghi_chu)`
+- `GPASemester`, `AcademicStanding`, `ClassificationRule`, `AuditLog`
 
 ## 4. Yeu cau chuc nang chi tiet
 
-### 4.1 Them / sua / xoa sinh vien
-Mo ta:
-- Tao moi ho so sinh vien voi ma sinh vien duy nhat.
-- Cap nhat thong tin ho so.
-- Khoa mem (soft delete) thay vi xoa cung de bao toan lich su hoc tap.
+### 4.1 ADMIN
+- Quan tri ho so sinh vien, hoc phan, lop hoc phan.
+- Tao dang ky hoc phan cho sinh vien.
+- Nhap/sua diem.
+- Theo doi audit log va bao cao.
 
-Rule:
-- `ma_sv` duy nhat toan he thong.
-- Email dung dinh dang va khong trung.
-- Khong cho xoa cung neu sinh vien da co lich su diem.
+### 4.2 SINH_VIEN
+- Xem danh sach mon da dang ky.
+- Dang ky hoc phan theo lop HP con mo.
+- Xem bang diem va GPA cua chinh minh.
 
-API goi y:
-- `POST /api/students`
-- `GET /api/students/{ma_sv}`
-- `PUT /api/students/{ma_sv}`
-- `DELETE /api/students/{ma_sv}` (soft delete)
+Rang buoc dang ky:
+- Khong dang ky trung hoc phan trong cung hoc ky + nam hoc.
+- Khong dang ky lop HP da du si so toi da hoac da dong.
 
-Tieu chi chap nhan:
-- Tao moi thanh cong khi du lieu hop le.
-- Bao loi ro rang khi trung `ma_sv` hoac email.
-- Ban ghi bi xoa mem khong hien trong danh sach mac dinh, nhung van co the truy vet lich su.
+### 4.3 GIANG_VIEN
+- Xem "Lop cua toi" (lop HP duoc phan cong).
+- Xem danh sach sinh vien trong tung lop.
+- Diem danh theo ngay hoc.
+- Nhap/sua diem cho sinh vien trong lop do.
 
-### 4.2 Nhap diem, tinh GPA
-Mo ta:
-- Nhap diem qua trinh va diem thi cho tung hoc phan.
-- Tu dong tinh diem tong ket he 10, quy doi he 4 va diem chu.
-- Tu dong tinh GPA hoc ky va GPA tich luy.
+Rang buoc quyen:
+- Giang vien chi thao tac du lieu thuoc lop HP do minh phu trach.
 
-Cong thuc:
-- `diem_tong_ket_10 = diem_qua_trinh * 0.4 + diem_thi * 0.6`
-- Quy doi he 4 theo bang quy tac (co cau hinh).
+### 4.4 Tinh diem, GPA, xep loai
+Cong thuc diem tong ket:
+- `diem_tong_ket_10 = diem_chuyen_can * 0.1 + diem_qua_trinh * 0.3 + diem_thi * 0.6`
+
+Rang buoc diem:
+- Moi cot diem trong khoang `0 -> 10`.
+- Moi ban ghi diem gan voi 1 dang ky hoc phan hop le.
+- Cho phep nhieu lan hoc, GPA tinh theo lan moi nhat cua tung hoc phan.
+
+Cong thuc GPA:
 - `GPA = SUM(diem_he_4 * so_tin_chi) / SUM(so_tin_chi)`
 - Lam tron 2 chu so thap phan.
 
-Rule:
-- Diem trong khoang `0 -> 10`.
-- Moi ban ghi diem phai gan voi 1 dang ky hoc phan hop le.
-- Cho phep nhap lai diem (lan hoc), tinh GPA theo ket qua moi nhat cua hoc phan.
-
-API goi y:
-- `POST /api/grades`
-- `PUT /api/grades/{id}`
-- `POST /api/gpa/recalculate/{ma_sv}`
-
-Tieu chi chap nhan:
-- He thong tu dong cap nhat GPA sau khi luu diem.
-- Kiem tra va chan diem ngoai mien gia tri.
-- Co lich su thay doi diem (audit log) theo nguoi thao tac va thoi gian.
-
-### 4.3 Xep loai hoc luc
-Mo ta:
-- Xep loai hoc luc theo GPA tich luy.
-
-Rule mac dinh (co cau hinh):
+Nguong xep loai mac dinh:
 - `>= 3.60`: Xuat sac
 - `3.20 - 3.59`: Gioi
 - `2.50 - 3.19`: Kha
 - `2.00 - 2.49`: Trung binh
 - `< 2.00`: Yeu
 
-API goi y:
-- `GET /api/students/{ma_sv}/academic-standing`
-- `POST /api/academic-standing/recalculate`
-
-Tieu chi chap nhan:
-- Xep loai phan anh dung nguong cau hinh.
-- Tu dong cap nhat khi GPA thay doi.
-
-### 4.4 Tim kiem sinh vien
-Mo ta:
-- Tim nhanh theo ma SV, ho ten, lop, khoa, nganh, trang thai.
-- Ho tro loc + sap xep + phan trang.
-
-Rule:
-- Tim khong phan biet hoa thuong cho ho ten.
-- Ho tro tim gan dung theo tu khoa (contains).
-- Tra ve ket qua trong <= 2 giay voi tap du lieu 100k sinh vien.
-
-API goi y:
-- `GET /api/students?keyword=&khoa=&nganh=&lop=&trang_thai=&page=&size=&sort=`
-
-Tieu chi chap nhan:
-- Ket qua tim dung bo loc.
-- Phan trang chinh xac tong ban ghi va tong trang.
-
-### 4.5 Xuat bao cao
-Mo ta:
-- Xuat bao cao PDF/Excel cho cac nhu cau dao tao.
-
-Loai bao cao:
-- Bang diem ca nhan theo hoc ky/nam hoc.
-- Danh sach sinh vien theo lop/khoa.
-- Bao cao phan bo hoc luc theo khoa hoc, nganh.
-- Danh sach sinh vien canh bao hoc vu.
-
-Rule:
-- Chi tai khoan co quyen moi duoc xuat bao cao.
-- Bao cao luu vet nguoi xuat, thoi gian xuat.
-
-API goi y:
-- `GET /api/reports/transcript/{ma_sv}`
-- `GET /api/reports/students`
-- `GET /api/reports/academic-standing`
-- `GET /api/reports/academic-warning`
-
-Tieu chi chap nhan:
-- File xuat dung mau, du lieu dung bo loc.
-- Thoi gian tao bao cao <= 30 giay voi bo du lieu 10k ban ghi.
+### 4.5 Bao cao
+- Bao cao bang diem ca nhan tren web.
+- Xuat CSV bang diem.
 
 ## 5. Yeu cau phi chuc nang
-- Bao mat: RBAC, JWT/Session, ma hoa ket noi HTTPS.
-- Toan ven du lieu: rang buoc khoa ngoai, transaction khi nhap diem + cap nhat GPA.
-- Kha nang mo rong: tach backend API va frontend web.
-- Audit: ghi nhat ky thao tac voi du lieu diem va ho so.
-- Sao luu: backup CSDL hang ngay.
+- RBAC theo role.
+- Toan ven du lieu bang rang buoc khoa ngoai + unique constraints.
+- Ghi audit log cho thao tac nghiep vu.
+- He thong van hanh tren SQLite va co the chuyen sang SQL engine khac.
 
-## 6. Tieu chi nghiem thu tong the
-- 100% chuc nang trong pham vi co test case nghiem thu.
-- Khong co loi nghiem trong (P1/P2) tai UAT.
-- Doi dao tao co the van hanh quy trinh nhap diem, tim kiem va xuat bao cao tren du lieu that.
+## 6. Tieu chi nghiem thu
+- Chuc nang 3 role hoat dong dung quyen.
+- Luong dang ky hoc phan, diem danh, nhap/sua diem van hanh thong suot.
+- GPA va xep loai cap nhat dung sau moi lan luu diem.
+- Bao cao bang diem va file CSV xuat dung du lieu.

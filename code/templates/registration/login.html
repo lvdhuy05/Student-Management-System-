@@ -1,10 +1,10 @@
-{% extends "base.html" %}
-{% block title %}Đăng nhập | SMS{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Dang nhap | SMS{% endblock %}
 
 {% block content %}
 <section class="card login-card">
-  <h2>Đăng nhập hệ thống</h2>
-  <p class="muted">Sử dụng tài khoản đã được cấp quyền để truy cập chức năng phù hợp.</p>
+  <h2>Dang nhap he thong</h2>
+  <p class="muted">Su dung tai khoan da duoc cap role de truy cap dung chuc nang.</p>
 
   <form method="post" class="grid-form">
     {% csrf_token %}
@@ -13,12 +13,12 @@
     {% endif %}
 
     <label>
-      Tên đăng nhập
+      Ten dang nhap
       <input type="text" name="username" autofocus required>
     </label>
 
     <label>
-      Mật khẩu
+      Mat khau
       <div class="password-field">
         <input id="password-input" type="password" name="password" required>
         <button
@@ -28,12 +28,12 @@
           aria-pressed="false"
           aria-controls="password-input"
         >
-          Hiện
+          Hien
         </button>
       </div>
     </label>
 
-    <button type="submit" class="btn primary">Đăng nhập</button>
+    <button type="submit" class="btn primary">Dang nhap</button>
   </form>
 </section>
 
@@ -46,7 +46,7 @@
     toggleBtn.addEventListener("click", function () {
       const isHidden = passwordInput.type === "password";
       passwordInput.type = isHidden ? "text" : "password";
-      toggleBtn.textContent = isHidden ? "Ẩn" : "Hiện";
+      toggleBtn.textContent = isHidden ? "An" : "Hien";
       toggleBtn.setAttribute("aria-pressed", String(isHidden));
     });
   })();

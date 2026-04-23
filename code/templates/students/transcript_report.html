@@ -1,23 +1,23 @@
 ﻿{% extends "base.html" %}
-{% block title %}Báo cáo bảng điểm {{ student.ma_sv }} | SMS{% endblock %}
+{% block title %}Bao cao bang diem {{ student.ma_sv }} | SMS{% endblock %}
 
 {% block content %}
 <section class="card">
   <div class="card-head">
     <div>
-      <h2>Báo cáo bảng điểm sinh viên</h2>
+      <h2>Bao cao bang diem sinh vien</h2>
       <p>{{ student.ma_sv }} - {{ student.ho_ten }}</p>
     </div>
     <div class="actions">
-      <a class="btn ghost" href="{% url 'students:student_detail' student.ma_sv %}">Về hồ sơ sinh viên</a>
-      <a class="btn primary" href="{% url 'students:transcript_csv' student.ma_sv %}">Xuất CSV</a>
+      <a class="btn ghost" href="{% url 'students:student_detail' student.ma_sv %}">Ve ho so sinh vien</a>
+      <a class="btn primary" href="{% url 'students:transcript_csv' student.ma_sv %}">Xuat CSV</a>
     </div>
   </div>
 
   {% if standing %}
     <div class="info-grid">
-      <p><strong>GPA tích lũy:</strong> {{ standing.gpa_tich_luy }}</p>
-      <p><strong>Xếp loại học lực:</strong> {{ standing.xep_loai }}</p>
+      <p><strong>GPA tich luy:</strong> {{ standing.gpa_tich_luy }}</p>
+      <p><strong>Xep loai hoc luc:</strong> {{ standing.xep_loai }}</p>
     </div>
   {% endif %}
 
@@ -25,18 +25,19 @@
     <table>
       <thead>
         <tr>
-          <th>Học kỳ</th>
-          <th>Năm học</th>
-          <th>Mã HP</th>
-          <th>Tên học phần</th>
-          <th>Tín chỉ</th>
-          <th>Điểm chuyên cần</th>
-          <th>Điểm quá trình</th>
-          <th>Điểm thi</th>
-          <th>Điểm TK (10)</th>
-          <th>Điểm hệ 4</th>
-          <th>Điểm chữ</th>
-          <th>Lần học</th>
+          <th>Hoc ky</th>
+          <th>Nam hoc</th>
+          <th>Ma lop HP</th>
+          <th>Ma HP</th>
+          <th>Ten hoc phan</th>
+          <th>Tin chi</th>
+          <th>Diem CC</th>
+          <th>Diem QT</th>
+          <th>Diem thi</th>
+          <th>Diem TK (10)</th>
+          <th>Diem he 4</th>
+          <th>Diem chu</th>
+          <th>Lan hoc</th>
         </tr>
       </thead>
       <tbody>
@@ -45,6 +46,7 @@
             <tr>
               <td>{{ enrollment.hoc_ky }}</td>
               <td>{{ enrollment.nam_hoc }}</td>
+              <td>{% if enrollment.classroom %}{{ enrollment.classroom.ma_lop_hp }}{% else %}-{% endif %}</td>
               <td>{{ enrollment.course.ma_hp }}</td>
               <td>{{ enrollment.course.ten_hp }}</td>
               <td>{{ enrollment.course.so_tin_chi }}</td>
@@ -59,7 +61,7 @@
           {% endwith %}
         {% empty %}
           <tr>
-            <td colspan="12">Sinh viên chưa có dữ liệu học phần/điểm.</td>
+            <td colspan="13">Sinh vien chua co du lieu hoc phan/diem.</td>
           </tr>
         {% endfor %}
       </tbody>

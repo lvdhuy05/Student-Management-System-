@@ -1,14 +1,13 @@
-@startuml
-title SMS - Class Diagram
+﻿@startuml
+title SMS - Class Diagram (RBAC 3 Roles)
 
 skinparam classAttributeIconSize 0
 hide circle
 
 enum VaiTro {
   ADMIN
-  DAO_TAO
+  SINH_VIEN
   GIANG_VIEN
-  CO_VAN
 }
 
 enum TrangThaiTaiKhoan {
@@ -23,139 +22,164 @@ enum TrangThaiSinhVien {
   SOFT_DELETED
 }
 
+enum TrangThaiLopHP {
+  OPEN
+  CLOSED
+}
+
 enum TrangThaiDangKy {
   DANG_HOC
   HOAN_THANH
   HUY
 }
 
-class NguoiDung {
-  +id: UUID
-  +username: string
-  +passwordHash: string
-  +vaiTro: VaiTro
-  +trangThai: TrangThaiTaiKhoan
-  +coQuyen(chucNang: string): bool
+enum TrangThaiDiemDanh {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
 }
 
-class SinhVien {
+class User {
+  +id: int
+  +username: string
+  +passwordHash: string
+}
+
+class UserProfile {
+  +id: int
+  +role: VaiTro
+  +status: TrangThaiTaiKhoan
+}
+
+class Student {
+  +id: int
   +maSv: string
   +hoTen: string
   +ngaySinh: date
-  +gioiTinh: string
   +email: string
-  +soDienThoai: string
   +khoa: string
   +nganh: string
   +lop: string
   +khoaHoc: string
   +trangThai: TrangThaiSinhVien
-  +capNhatThongTin(): void
-  +xoaMem(): void
 }
 
-class HocPhan {
+class Course {
+  +id: int
   +maHp: string
   +tenHp: string
   +soTinChi: int
 }
 
-class DangKyHocPhan {
-  +id: UUID
+class Classroom {
+  +id: int
+  +maLopHp: string
+  +hocKy: string
+  +namHoc: string
+  +phongHoc: string
+  +lichHoc: string
+  +siSoToiDa: int
+  +trangThai: TrangThaiLopHP
+}
+
+class Enrollment {
+  +id: int
   +hocKy: string
   +namHoc: string
   +trangThai: TrangThaiDangKy
 }
 
-class Diem {
-  +id: UUID
-  +diemQuaTrinh: float
-  +diemThi: float
-  +diemTongKet10: float
-  +diemHe4: float
+class Grade {
+  +id: int
+  +diemChuyenCan: decimal
+  +diemQuaTrinh: decimal
+  +diemThi: decimal
+  +diemTongKet10: decimal
+  +diemHe4: decimal
   +diemChu: string
   +lanHoc: int
-  +capNhatLuc: datetime
-  +tinhDiemTongKet(): float
-  +quyDoiDiem(): void
 }
 
-class GPAHocKy {
-  +id: UUID
+class Attendance {
+  +id: int
+  +ngayHoc: date
+  +trangThai: TrangThaiDiemDanh
+  +ghiChu: string
+}
+
+class GPASemester {
+  +id: int
   +hocKy: string
   +namHoc: string
-  +gpaHe4: float
+  +gpaHe4: decimal
   +tongTinChiTichLuy: int
-  +capNhatLuc: datetime
 }
 
-class HocLuc {
-  +id: UUID
-  +gpaTichLuy: float
+class AcademicStanding {
+  +id: int
+  +gpaTichLuy: decimal
   +xepLoai: string
-  +capNhatLuc: datetime
 }
 
-class QuyTacXepLoai {
-  +id: UUID
-  +diemTu: float
-  +diemDen: float
+class ClassificationRule {
+  +id: int
+  +diemTu: decimal
+  +diemDen: decimal
   +nhanXepLoai: string
   +kichHoat: bool
 }
 
 class AuditLog {
-  +id: UUID
-  +actorId: UUID
+  +id: int
   +hanhDong: string
   +doiTuong: string
-  +truocThayDoi: text
-  +sauThayDoi: text
+  +truocThayDoi: json
+  +sauThayDoi: json
   +taoLuc: datetime
 }
 
-class StudentService {
-  +taoSinhVien(): SinhVien
-  +capNhatSinhVien(maSv: string): SinhVien
-  +xoaMemSinhVien(maSv: string): void
-  +timKiemSinhVien(filter: map): list
+class EnrollmentService {
+  +adminDangKyHocPhan(): Enrollment
+  +sinhVienDangKyHocPhan(): Enrollment
 }
 
 class GradeService {
-  +nhapDiem(payload: map): Diem
-  +capNhatDiem(id: UUID, payload: map): Diem
-  +validateDiem(payload: map): bool
+  +nhapSuaDiem(enrollmentId, lanHoc, scores): Grade
+}
+
+class AttendanceService {
+  +diemDanhLop(classroomId, ngayHoc, rows): list
 }
 
 class GPAService {
-  +tinhGPAHocKy(maSv: string, hocKy: string, namHoc: string): GPAHocKy
-  +tinhGPATichLuy(maSv: string): float
-  +xepLoaiHocLuc(maSv: string): HocLuc
+  +recalculate(studentId): AcademicStanding
 }
 
-class ReportService {
-  +xuatBangDiemCaNhan(maSv: string): File
-  +xuatDanhSachSinhVien(filter: map): File
-  +xuatBaoCaoHocLuc(filter: map): File
-  +xuatDanhSachCanhBaoHocVu(filter: map): File
-}
+User "1" -- "1" UserProfile
+UserProfile "0..1" -- "1" Student : account_of
+User "1" -- "0..*" Classroom : teaches
+User "1" -- "0..*" AuditLog : actor
 
-SinhVien "1" -- "0..*" DangKyHocPhan : dang ky
-HocPhan "1" -- "0..*" DangKyHocPhan : duoc dang ky
-DangKyHocPhan "1" -- "0..*" Diem : lan hoc
-SinhVien "1" -- "0..*" GPAHocKy : tich luy
-SinhVien "1" -- "0..*" HocLuc : lich su
-QuyTacXepLoai "1" -- "0..*" HocLuc : ap dung
-NguoiDung "1" -- "0..*" AuditLog : tao log
+Course "1" -- "0..*" Classroom
+Student "1" -- "0..*" Enrollment
+Classroom "1" -- "0..*" Enrollment
+Enrollment "1" -- "0..*" Grade
+Classroom "1" -- "0..*" Attendance
+Enrollment "1" -- "0..*" Attendance
+Student "1" -- "0..*" GPASemester
+Student "1" -- "0..1" AcademicStanding
+ClassificationRule "1" -- "0..*" AcademicStanding : classify_by_gpa
 
-StudentService ..> SinhVien : CRUD/search
-GradeService ..> Diem : tinh/luu
-GradeService ..> DangKyHocPhan : kiem tra dang ky
-GradeService ..> GPAService : trigger recalc
-GPAService ..> GPAHocKy : cap nhat
-GPAService ..> QuyTacXepLoai : doc nguong
-ReportService ..> SinhVien : lay du lieu
-ReportService ..> Diem : tong hop diem
-ReportService ..> GPAHocKy : tong hop GPA
+EnrollmentService ..> Enrollment
+EnrollmentService ..> Classroom
+GradeService ..> Grade
+GradeService ..> Enrollment
+GradeService ..> GPAService
+AttendanceService ..> Attendance
+AttendanceService ..> Classroom
+GPAService ..> GPASemester
+GPAService ..> AcademicStanding
+GPAService ..> ClassificationRule
 
 @enduml

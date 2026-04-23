@@ -1,56 +1,47 @@
-@startuml
-title SMS - Activity Diagram (Luong nghiep vu tong the)
+﻿@startuml
+title SMS - Activity Diagram (3 Roles)
 
 start
 
 :Dang nhap he thong;
 if (Xac thuc + RBAC hop le?) then (Co)
-  :Chon chuc nang;
+  :Chuyen den Trang chu theo role;
 else (Khong)
-  :Tu choi truy cap;
+  :Thong bao loi dang nhap / khong duoc cap quyen;
   stop
 endif
 
-repeat
-  if (CRUD sinh vien?) then (Co)
-    :Nhap thong tin sinh vien;
-    if (Du lieu hop le va khong trung?) then (Co)
-      :Luu thay doi sinh vien;
-    else (Khong)
-      :Tra loi validation error;
-    endif
+if (Role = ADMIN?) then (Co)
+  repeat
+    :Quan tri Sinh vien / Hoc phan / Lop hoc phan;
+    :Tao dang ky hoc phan;
+    :Nhap hoac sua diem;
+    :Theo doi bao cao + audit log;
+  repeat while (Tiep tuc?) is (Co)
+  stop
+endif
 
-  elseif (Nhap diem/GPA?) then (Co)
-    :Nhap diem qua trinh + diem thi;
-    if (Diem 0..10 va co dang ky hoc phan?) then (Co)
-      :Luu diem;
-      :Tinh diem tong ket he 10;
-      :Quy doi diem he 4 + diem chu;
-      :Tinh GPA hoc ky va tich luy;
-      :Xep loai hoc luc theo nguong cau hinh;
-      :Ghi audit log;
-    else (Khong)
-      :Tra loi loi nghiep vu;
-    endif
-
-  elseif (Tim kiem sinh vien?) then (Co)
-    :Nhap tu khoa + bo loc;
-    :Thuc hien tim kiem + phan trang;
-    :Hien thi ket qua;
-
-  elseif (Xuat bao cao?) then (Co)
-    :Chon loai bao cao + bo loc;
-    if (Nguoi dung co quyen xuat?) then (Co)
-      :Tong hop du lieu bao cao;
-      :Render file PDF/Excel;
-      :Ghi nhat ky xuat bao cao;
-      :Tra file ve nguoi dung;
-    else (Khong)
-      :Tra loi 403 Forbidden;
-    endif
+if (Role = SINH_VIEN?) then (Co)
+  :Mo trang Mon da dang ky;
+  :Chon lop hoc phan can dang ky;
+  if (Lop con cho + chua trung hoc phan/hoc ky?) then (Dat)
+    :Luu dang ky hoc phan;
+  else (Khong dat)
+    :Bao loi nghiep vu;
   endif
+  :Xem bang diem ca nhan;
+  stop
+endif
 
-repeat while (Tiep tuc thao tac?) is (Co)
+if (Role = GIANG_VIEN?) then (Co)
+  :Mo trang Lop cua toi;
+  :Chon lop hoc phan;
+  :Xem danh sach sinh vien trong lop;
+  :Chon ngay hoc va diem danh;
+  :Nhap/Sua diem cho tung sinh vien;
+  :He thong tu dong tinh GPA va cap nhat hoc luc;
+  stop
+endif
 
 stop
 @enduml

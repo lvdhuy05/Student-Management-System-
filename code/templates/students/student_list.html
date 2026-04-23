@@ -1,44 +1,42 @@
-{% extends "base.html" %}
-{% block title %}Danh sách sinh viên | SMS{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Danh sach sinh vien | SMS{% endblock %}
 
 {% block content %}
 <section class="card">
   <div class="card-head">
-    <h2>Danh sách sinh viên</h2>
-    {% if can_manage_students %}
-      <a class="btn primary" href="{% url 'students:student_create' %}">+ Thêm sinh viên</a>
-    {% endif %}
+    <h2>Danh sach sinh vien</h2>
+    <a class="btn primary" href="{% url 'students:student_create' %}">+ Them sinh vien</a>
   </div>
 
   <form method="get" class="grid-form grid-5">
     <label>
-      Từ khóa
-      <input type="text" name="keyword" value="{{ filters.keyword }}" placeholder="Mã SV / Họ tên">
+      Tu khoa
+      <input type="text" name="keyword" value="{{ filters.keyword }}" placeholder="Ma SV / Ho ten">
     </label>
     <label>
       Khoa
       <input type="text" name="khoa" value="{{ filters.khoa }}">
     </label>
     <label>
-      Ngành
+      Nganh
       <input type="text" name="nganh" value="{{ filters.nganh }}">
     </label>
     <label>
-      Lớp
+      Lop
       <input type="text" name="lop" value="{{ filters.lop }}">
     </label>
     <label>
-      Trạng thái
+      Trang thai
       <select name="trang_thai">
-        <option value="">Tất cả (ẩn bản ghi đã xóa mềm)</option>
+        <option value="">Tat ca (an ban ghi da xoa mem)</option>
         {% for value, label in status_choices %}
           <option value="{{ value }}" {% if filters.trang_thai == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </label>
     <div class="form-actions">
-      <button type="submit" class="btn primary">Tìm kiếm</button>
-      <a class="btn ghost" href="{% url 'students:student_list' %}">Đặt lại</a>
+      <button type="submit" class="btn primary">Tim kiem</button>
+      <a class="btn ghost" href="{% url 'students:student_list' %}">Dat lai</a>
     </div>
   </form>
 </section>
@@ -48,14 +46,14 @@
     <table>
       <thead>
         <tr>
-          <th>Mã SV</th>
-          <th>Họ tên</th>
+          <th>Ma SV</th>
+          <th>Ho ten</th>
           <th>Email</th>
           <th>Khoa</th>
-          <th>Ngành</th>
-          <th>Lớp</th>
-          <th>Trạng thái</th>
-          <th>Thao tác</th>
+          <th>Nganh</th>
+          <th>Lop</th>
+          <th>Trang thai</th>
+          <th>Thao tac</th>
         </tr>
       </thead>
       <tbody>
@@ -67,21 +65,19 @@
             <td>{{ student.khoa }}</td>
             <td>{{ student.nganh }}</td>
             <td>{{ student.lop }}</td>
-            <td>{{ student.trang_thai }}</td>
+            <td>{{ student.get_trang_thai_display }}</td>
             <td>
               <a class="btn tiny" href="{% url 'students:student_detail' student.ma_sv %}">Xem</a>
-              {% if can_manage_students %}
-                <a class="btn tiny ghost" href="{% url 'students:student_update' student.ma_sv %}">Sửa</a>
-                <form method="post" action="{% url 'students:student_delete' student.ma_sv %}" class="inline-form">
-                  {% csrf_token %}
-                  <button class="btn tiny danger" type="submit" onclick="return confirm('Xác nhận xóa mềm sinh viên?')">Xóa mềm</button>
-                </form>
-              {% endif %}
+              <a class="btn tiny ghost" href="{% url 'students:student_update' student.ma_sv %}">Sua</a>
+              <form method="post" action="{% url 'students:student_delete' student.ma_sv %}" class="inline-form">
+                {% csrf_token %}
+                <button class="btn tiny danger" type="submit" onclick="return confirm('Xac nhan xoa mem sinh vien?')">Xoa mem</button>
+              </form>
             </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="8">Không có dữ liệu phù hợp.</td>
+            <td colspan="8">Khong co du lieu phu hop.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -91,7 +87,7 @@
   {% if page_obj.paginator.num_pages > 1 %}
     <div class="pagination">
       {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}&keyword={{ filters.keyword }}&khoa={{ filters.khoa }}&nganh={{ filters.nganh }}&lop={{ filters.lop }}&trang_thai={{ filters.trang_thai }}">Trang trước</a>
+        <a href="?page={{ page_obj.previous_page_number }}&keyword={{ filters.keyword }}&khoa={{ filters.khoa }}&nganh={{ filters.nganh }}&lop={{ filters.lop }}&trang_thai={{ filters.trang_thai }}">Trang truoc</a>
       {% endif %}
       <span>Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
       {% if page_obj.has_next %}

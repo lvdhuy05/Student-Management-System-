@@ -1,4 +1,4 @@
-from functools import wraps
+﻿from functools import wraps
 
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -15,11 +15,22 @@ def get_user_role(user) -> str | None:
 
     profile = getattr(user, "profile", None)
     if profile is None:
-        profile = UserProfile.objects.create(user=user, role=UserProfile.Role.DAO_TAO)
+        profile = UserProfile.objects.create(user=user, role=UserProfile.Role.SINH_VIEN)
 
     if profile.status != UserProfile.Status.ACTIVE:
         return None
     return profile.role
+
+
+def get_user_student(user):
+    if not user or not user.is_authenticated:
+        return None
+    profile = getattr(user, "profile", None)
+    if not profile:
+        return None
+    if profile.role != UserProfile.Role.SINH_VIEN:
+        return None
+    return profile.student
 
 
 def role_required(*allowed_roles: str):
@@ -31,11 +42,11 @@ def role_required(*allowed_roles: str):
 
             role = get_user_role(request.user)
             if role is None:
-                messages.error(request, "Tài khoản của bạn đã bị khóa hoặc chưa kích hoạt.")
+                messages.error(request, "Tai khoan cua ban da bi khoa hoac chua kich hoat.")
                 return redirect("login")
 
             if allowed_roles and role not in allowed_roles:
-                messages.error(request, "Bạn không có quyền truy cập chức năng này.")
+                messages.error(request, "Ban khong co quyen truy cap chuc nang nay.")
                 return redirect("students:dashboard")
             return view_func(request, *args, **kwargs)
 

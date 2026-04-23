@@ -1,0 +1,107 @@
+﻿{% extends "base.html" %}
+{% block title %}Chi tiet lop hoc phan {{ classroom.ma_lop_hp }} | SMS{% endblock %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>{{ classroom.ma_lop_hp }} - {{ classroom.course.ma_hp }} - {{ classroom.course.ten_hp }}</h2>
+      <p>
+        Giang vien: {% if classroom.giang_vien %}{{ classroom.giang_vien.username }}{% else %}-{% endif %} |
+        Hoc ky {{ classroom.hoc_ky }} - {{ classroom.nam_hoc }} |
+        Phong: {{ classroom.phong_hoc|default:"-" }}
+      </p>
+    </div>
+    <div class="actions">
+      {% if is_teacher_role %}
+        <a class="btn ghost" href="{% url 'students:my_classes' %}">Ve lop cua toi</a>
+      {% else %}
+        <a class="btn ghost" href="{% url 'students:classroom_list' %}">Ve danh sach lop HP</a>
+      {% endif %}
+      <a class="btn primary" href="{% url 'students:grade_input' %}">Nhap/Sua diem</a>
+    </div>
+  </div>
+
+  {% if attendance_dates %}
+    <p class="muted">
+      Ngay da diem danh:
+      {% for d in attendance_dates %}
+        <a href="{% url 'students:classroom_detail' classroom.id %}?ngay_hoc={{ d|date:'Y-m-d' }}">{{ d|date:"d/m/Y" }}</a>{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Diem danh va nhap diem theo sinh vien</h2>
+  </div>
+
+  <form method="post" action="{% url 'students:attendance_take' classroom.id %}">
+    {% csrf_token %}
+
+    <div class="form-actions" style="margin-bottom: 0.8rem;">
+      <label>
+        Ngay hoc
+        <input type="date" name="ngay_hoc" value="{{ selected_date }}" required>
+      </label>
+      <button class="btn primary" type="submit">Luu diem danh</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ma SV</th>
+            <th>Ho ten</th>
+            <th>Diem danh</th>
+            <th>Ghi chu</th>
+            <th>Diem CC</th>
+            <th>Diem QT</th>
+            <th>Diem thi</th>
+            <th>Diem TK</th>
+            <th>Diem chu</th>
+            <th>Thao tac diem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in roster %}
+            <tr>
+              <td>{{ row.enrollment.student.ma_sv }}</td>
+              <td>{{ row.enrollment.student.ho_ten }}</td>
+              <td>
+                <select name="status_{{ row.enrollment.id }}">
+                  {% for value, label in attendance_status_choices %}
+                    <option value="{{ value }}"
+                      {% if row.attendance and row.attendance.trang_thai == value %}selected{% endif %}
+                      {% if not row.attendance and value == 'PRESENT' %}selected{% endif %}
+                    >{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <input type="text" name="note_{{ row.enrollment.id }}" value="{% if row.attendance %}{{ row.attendance.ghi_chu }}{% endif %}">
+              </td>
+              <td>{% if row.latest_grade %}{{ row.latest_grade.diem_chuyen_can }}{% else %}-{% endif %}</td>
+              <td>{% if row.latest_grade %}{{ row.latest_grade.diem_qua_trinh }}{% else %}-{% endif %}</td>
+              <td>{% if row.latest_grade %}{{ row.latest_grade.diem_thi }}{% else %}-{% endif %}</td>
+              <td>{% if row.latest_grade %}{{ row.latest_grade.diem_tong_ket_10 }}{% else %}-{% endif %}</td>
+              <td>{% if row.latest_grade %}{{ row.latest_grade.diem_chu }}{% else %}-{% endif %}</td>
+              <td>
+                <a class="btn tiny"
+                   href="{% url 'students:grade_input' %}?student={{ row.enrollment.student.id }}&enrollment={{ row.enrollment.id }}&next={% url 'students:classroom_detail' classroom.id %}">
+                  Nhap/Sua diem
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="10">Chua co sinh vien dang ky lop hoc phan nay.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+</section>
+{% endblock %}

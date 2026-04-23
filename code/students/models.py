@@ -1,8 +1,9 @@
-from decimal import Decimal, ROUND_HALF_UP
+﻿from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 
 
 def score_10_to_4_and_letter(score_10: Decimal) -> tuple[Decimal, str]:
@@ -24,18 +25,24 @@ def score_10_to_4_and_letter(score_10: Decimal) -> tuple[Decimal, str]:
 
 class UserProfile(models.Model):
     class Role(models.TextChoices):
-        ADMIN = "ADMIN", "Quản trị viên"
-        DAO_TAO = "DAO_TAO", "Đào tạo"
-        GIANG_VIEN = "GIANG_VIEN", "Giảng viên"
-        CO_VAN = "CO_VAN", "Cố vấn học tập"
+        ADMIN = "ADMIN", "Quan tri vien"
+        SINH_VIEN = "SINH_VIEN", "Sinh vien"
+        GIANG_VIEN = "GIANG_VIEN", "Giang vien"
 
     class Status(models.TextChoices):
-        ACTIVE = "ACTIVE", "Hoạt động"
-        INACTIVE = "INACTIVE", "Không hoạt động"
-        LOCKED = "LOCKED", "Bị khóa"
+        ACTIVE = "ACTIVE", "Hoat dong"
+        INACTIVE = "INACTIVE", "Khong hoat dong"
+        LOCKED = "LOCKED", "Bi khoa"
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.DAO_TAO)
+    student = models.OneToOneField(
+        "Student",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="account_profile",
+    )
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.SINH_VIEN)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
 
     def __str__(self) -> str:
@@ -44,9 +51,9 @@ class UserProfile(models.Model):
 
 class Student(models.Model):
     class Status(models.TextChoices):
-        ACTIVE = "ACTIVE", "Đang học"
-        INACTIVE = "INACTIVE", "Tạm ngưng"
-        SOFT_DELETED = "SOFT_DELETED", "Đã xóa mềm"
+        ACTIVE = "ACTIVE", "Dang hoc"
+        INACTIVE = "INACTIVE", "Tam ngung"
+        SOFT_DELETED = "SOFT_DELETED", "Da xoa mem"
 
     ma_sv = models.CharField(max_length=20, unique=True)
     ho_ten = models.CharField(max_length=150)
@@ -85,13 +92,49 @@ class Course(models.Model):
         return f"{self.ma_hp} - {self.ten_hp}"
 
 
+class Classroom(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Dang mo"
+        CLOSED = "CLOSED", "Da dong"
+
+    ma_lop_hp = models.CharField(max_length=30, unique=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="classrooms")
+    giang_vien = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="teaching_classes",
+    )
+    hoc_ky = models.CharField(max_length=10)
+    nam_hoc = models.CharField(max_length=20)
+    phong_hoc = models.CharField(max_length=50, blank=True)
+    lich_hoc = models.CharField(max_length=120, blank=True)
+    si_so_toi_da = models.PositiveSmallIntegerField(default=60)
+    trang_thai = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-nam_hoc", "-hoc_ky", "ma_lop_hp"]
+
+    def __str__(self) -> str:
+        return f"{self.ma_lop_hp} - {self.course.ma_hp} - HK{self.hoc_ky} {self.nam_hoc}"
+
+
 class Enrollment(models.Model):
     class Status(models.TextChoices):
-        DANG_HOC = "DANG_HOC", "Đang học"
-        HOAN_THANH = "HOAN_THANH", "Hoàn thành"
-        HUY = "HUY", "Hủy"
+        DANG_HOC = "DANG_HOC", "Dang hoc"
+        HOAN_THANH = "HOAN_THANH", "Hoan thanh"
+        HUY = "HUY", "Huy"
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="enrollments")
+    classroom = models.ForeignKey(
+        Classroom,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="enrollments",
+    )
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
     hoc_ky = models.CharField(max_length=10)
     nam_hoc = models.CharField(max_length=20)
@@ -103,12 +146,35 @@ class Enrollment(models.Model):
             models.UniqueConstraint(
                 fields=["student", "course", "hoc_ky", "nam_hoc"],
                 name="uniq_student_course_semester_year",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["student", "classroom"],
+                condition=Q(classroom__isnull=False),
+                name="uniq_student_classroom",
+            ),
         ]
         ordering = ["-nam_hoc", "-hoc_ky", "course__ma_hp"]
 
+    def sync_from_classroom(self) -> None:
+        if not self.classroom_id:
+            return
+        self.course = self.classroom.course
+        self.hoc_ky = self.classroom.hoc_ky
+        self.nam_hoc = self.classroom.nam_hoc
+
+    def clean(self) -> None:
+        if self.classroom and self.classroom.trang_thai == Classroom.Status.CLOSED and self.pk is None:
+            raise ValidationError({"classroom": "Lop hoc phan da dong dang ky."})
+        if self.student and self.student.trang_thai == Student.Status.SOFT_DELETED:
+            raise ValidationError({"student": "Khong the dang ky cho sinh vien da xoa mem."})
+
+    def save(self, *args, **kwargs):
+        self.sync_from_classroom()
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
-        return f"{self.student.ma_sv} | {self.course.ma_hp} | HK{self.hoc_ky} {self.nam_hoc}"
+        class_code = self.classroom.ma_lop_hp if self.classroom_id else "N/A"
+        return f"{self.student.ma_sv} | {self.course.ma_hp} | {class_code} | HK{self.hoc_ky} {self.nam_hoc}"
 
 
 class Grade(models.Model):
@@ -133,9 +199,9 @@ class Grade(models.Model):
         for field_name in ("diem_chuyen_can", "diem_qua_trinh", "diem_thi"):
             value = getattr(self, field_name)
             if value is None:
-                raise ValidationError({field_name: "Điểm bắt buộc nhập."})
+                raise ValidationError({field_name: "Diem bat buoc nhap."})
             if value < Decimal("0.00") or value > Decimal("10.00"):
-                raise ValidationError({field_name: "Điểm phải trong khoảng 0 -> 10."})
+                raise ValidationError({field_name: "Diem phai trong khoang 0 -> 10."})
 
     def calculate(self) -> None:
         tong_ket = (
@@ -150,6 +216,48 @@ class Grade(models.Model):
         self.full_clean()
         self.calculate()
         super().save(*args, **kwargs)
+
+
+class Attendance(models.Model):
+    class Status(models.TextChoices):
+        PRESENT = "PRESENT", "Co mat"
+        ABSENT = "ABSENT", "Vang"
+        LATE = "LATE", "Di muon"
+        EXCUSED = "EXCUSED", "Co phep"
+
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="attendances")
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name="attendances")
+    ngay_hoc = models.DateField()
+    trang_thai = models.CharField(max_length=20, choices=Status.choices, default=Status.PRESENT)
+    ghi_chu = models.CharField(max_length=255, blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="attendance_updates",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["classroom", "enrollment", "ngay_hoc"],
+                name="uniq_attendance_per_session",
+            )
+        ]
+        ordering = ["-ngay_hoc", "enrollment__student__ma_sv"]
+
+    def clean(self) -> None:
+        if self.enrollment_id and self.classroom_id and self.enrollment.classroom_id != self.classroom_id:
+            raise ValidationError({"enrollment": "Dang ky hoc phan khong thuoc lop hoc phan nay."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.classroom.ma_lop_hp} | {self.enrollment.student.ma_sv} | {self.ngay_hoc} | {self.trang_thai}"
 
 
 class GPASemester(models.Model):

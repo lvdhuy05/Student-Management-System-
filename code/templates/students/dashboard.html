@@ -1,60 +1,266 @@
-{% extends "base.html" %}
-{% block title %}Trang chủ | SMS{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Trang chu | SMS{% endblock %}
+{% block page_title %}Trang chu{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>Hệ thống Quản lý Sinh viên</h1>
-  <p>Quản lý hồ sơ, nhập điểm, tính GPA, xếp loại học lực và xuất báo cáo.</p>
-</section>
+{% if dashboard_mode == "admin" %}
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <div>
+        <p class="kpi-label">Tong sinh vien</p>
+        <h3>{{ student_count }}</h3>
+        <span class="kpi-change up">↗ +{{ student_growth }}%</span>
+      </div>
+      <div class="kpi-icon">🎓</div>
+    </article>
 
-<section class="stats-grid">
-  <article class="card stat-card">
-    <h3>Sinh viên</h3>
-    <p class="big-number">{{ student_count }}</p>
-  </article>
-  <article class="card stat-card">
-    <h3>Học phần</h3>
-    <p class="big-number">{{ course_count }}</p>
-  </article>
-  <article class="card stat-card">
-    <h3>Đăng ký học phần</h3>
-    <p class="big-number">{{ enrollment_count }}</p>
-  </article>
-  <article class="card stat-card">
-    <h3>Bản ghi điểm</h3>
-    <p class="big-number">{{ grade_count }}</p>
-  </article>
-</section>
+    <article class="kpi-card">
+      <div>
+        <p class="kpi-label">So lop hoc</p>
+        <h3>{{ classroom_count }}</h3>
+        <span class="kpi-change up">↗ +{{ classroom_growth }}%</span>
+      </div>
+      <div class="kpi-icon">🏫</div>
+    </article>
 
-<section class="card">
-  <div class="card-head">
-    <h2>Nhật ký thao tác gần đây</h2>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Thời gian</th>
-          <th>Người thao tác</th>
-          <th>Hành động</th>
-          <th>Đối tượng</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for log in recent_logs %}
-          <tr>
-            <td>{{ log.tao_luc|date:"d/m/Y H:i" }}</td>
-            <td>{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</td>
-            <td>{{ log.hanh_dong }}</td>
-            <td>{{ log.doi_tuong }}</td>
-          </tr>
+    <article class="kpi-card">
+      <div>
+        <p class="kpi-label">So khoa</p>
+        <h3>{{ faculty_count }}</h3>
+        <span class="kpi-change up">↗ he thong dang mo rong</span>
+      </div>
+      <div class="kpi-icon">🏢</div>
+    </article>
+
+    <article class="kpi-card">
+      <div>
+        <p class="kpi-label">Ty le dat hoc luc</p>
+        <h3>{{ graduation_rate }}%</h3>
+        <span class="kpi-change {% if graduation_rate >= 60 %}up{% else %}down{% endif %}">
+          {% if graduation_rate >= 60 %}↗ on dinh{% else %}↘ can cai thien{% endif %}
+        </span>
+      </div>
+      <div class="kpi-icon">🏅</div>
+    </article>
+  </section>
+
+  <section class="panel-grid panel-grid-2">
+    <article class="panel panel-large">
+      <div class="panel-head">
+        <h2>Thong ke tang truong</h2>
+        <small>So luong sinh vien va lop hoc phan</small>
+      </div>
+      <div class="chart-wrap">
+        <svg viewBox="0 0 760 280" preserveAspectRatio="none" class="line-chart" aria-hidden="true">
+          <defs>
+            <linearGradient id="adminArea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="rgba(245,37,116,0.30)"></stop>
+              <stop offset="100%" stop-color="rgba(245,37,116,0.02)"></stop>
+            </linearGradient>
+          </defs>
+          <polyline points="20,40 140,55 260,80 380,120 500,140 620,115 740,250" fill="none" stroke="#ef2a6d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <polygon points="20,40 140,55 260,80 380,120 500,140 620,115 740,250 740,270 20,270" fill="url(#adminArea)"></polygon>
+        </svg>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Phan bo theo khoa</h2>
+        <small>Tong quan sinh vien theo khoa</small>
+      </div>
+
+      <div class="donut-sim">
+        <div class="donut-ring"></div>
+      </div>
+
+      <ul class="legend-list">
+        {% for item in department_stats %}
+          <li>
+            <span class="dot"></span>
+            <span>{{ item.khoa }}: {{ item.total }}</span>
+          </li>
         {% empty %}
-          <tr>
-            <td colspan="4">Chưa có nhật ký.</td>
-          </tr>
+          <li><span>Chua co du lieu khoa.</span></li>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
+      </ul>
+    </article>
+  </section>
+
+  <section class="panel-grid panel-grid-2">
+    <article class="panel panel-large">
+      <div class="panel-head">
+        <h2>Sinh vien moi</h2>
+        <small>Danh sach sinh vien vua tao ho so</small>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Sinh vien</th>
+              <th>Lop</th>
+              <th>Khoa</th>
+              <th>Trang thai</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in new_students %}
+              <tr>
+                <td>
+                  <strong>{{ s.ho_ten }}</strong><br>
+                  <small>{{ s.ma_sv }}</small>
+                </td>
+                <td>{{ s.lop }}</td>
+                <td>{{ s.khoa }}</td>
+                <td><span class="status-pill ok">{{ s.get_trang_thai_display }}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4">Chua co sinh vien moi.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Hoat dong</h2>
+        <small>Cap nhat gan day</small>
+      </div>
+
+      <ul class="activity-list">
+        {% for log in recent_logs %}
+          <li>
+            <span class="activity-dot"></span>
+            <div>
+              <strong>{{ log.hanh_dong }}</strong>
+              <p>{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %} • {{ log.tao_luc|date:"d/m H:i" }}</p>
+            </div>
+          </li>
+        {% empty %}
+          <li>Chua co nhat ky.</li>
+        {% endfor %}
+      </ul>
+    </article>
+  </section>
+
+{% elif dashboard_mode == "teacher" %}
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Lop cua toi</h2>
+        <small>Danh sach cac lop hoc phan ban phu trach</small>
+      </div>
+      <a class="btn primary" href="{% url 'students:my_classes' %}">Mo danh sach day du</a>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ma lop</th>
+            <th>Mon hoc</th>
+            <th>Hoc ky</th>
+            <th>Sinh vien</th>
+            <th>Tien do diem</th>
+            <th>Thao tac</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for classroom in my_classes %}
+            <tr>
+              <td><strong>{{ classroom.ma_lop_hp }}</strong></td>
+              <td>
+                <strong>{{ classroom.course.ten_hp }}</strong><br>
+                <small>{{ classroom.course.ma_hp }} • {{ classroom.course.so_tin_chi }} TC</small>
+              </td>
+              <td><span class="term-pill">HK{{ classroom.hoc_ky }} {{ classroom.nam_hoc }}</span></td>
+              <td>{{ classroom.student_count }}</td>
+              <td>
+                <div class="progress-cell">
+                  <span>{{ classroom.graded_count }}/{{ classroom.student_count }}</span>
+                  <div class="progress-track"><span class="progress-fill" style="width: {{ classroom.progress_percent }}%;"></span></div>
+                </div>
+              </td>
+              <td><a class="btn tiny" href="{% url 'students:classroom_detail' classroom.id %}">Chi tiet</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6">Ban chua duoc phan cong lop hoc phan nao.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+{% elif dashboard_mode == "student" %}
+  <section class="kpi-grid kpi-grid-student">
+    <article class="kpi-card">
+      <div>
+        <p class="kpi-label">Mon da dang ky</p>
+        <h3>{{ enrollment_count }}</h3>
+      </div>
+      <div class="kpi-icon">📚</div>
+    </article>
+    <article class="kpi-card">
+      <div>
+        <p class="kpi-label">Lop con mo</p>
+        <h3>{{ available_classroom_count }}</h3>
+      </div>
+      <div class="kpi-icon">🟢</div>
+    </article>
+    <article class="kpi-card">
+      <div>
+        <p class="kpi-label">GPA tich luy</p>
+        <h3>{% if standing %}{{ standing.gpa_tich_luy }}{% else %}0.00{% endif %}</h3>
+      </div>
+      <div class="kpi-icon">🏆</div>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Thong tin hoc tap</h2>
+        <small>{{ student.ma_sv }} - {{ student.ho_ten }}</small>
+      </div>
+      <div class="actions">
+        <a class="btn ghost" href="{% url 'students:my_enrollments' %}">Dang ky mon hoc</a>
+        <a class="btn primary" href="{% url 'students:my_transcript' %}">Xem bang diem</a>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Hoc ky</th>
+            <th>Nam hoc</th>
+            <th>Lop HP</th>
+            <th>Hoc phan</th>
+            <th>Trang thai</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for enrollment in recent_enrollments %}
+            <tr>
+              <td>{{ enrollment.hoc_ky }}</td>
+              <td>{{ enrollment.nam_hoc }}</td>
+              <td>{% if enrollment.classroom %}{{ enrollment.classroom.ma_lop_hp }}{% else %}-{% endif %}</td>
+              <td>{{ enrollment.course.ma_hp }} - {{ enrollment.course.ten_hp }}</td>
+              <td>{{ enrollment.get_trang_thai_display }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">Ban chua co dang ky hoc phan.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% else %}
+  <section class="panel">
+    <h2>Khong the tai du lieu dashboard</h2>
+    <p>Tai khoan hien tai chua duoc lien ket dung vai tro hoac du lieu can thiet.</p>
+  </section>
+{% endif %}
 {% endblock %}

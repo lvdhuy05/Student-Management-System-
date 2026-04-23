@@ -1,15 +1,15 @@
-from decimal import Decimal, ROUND_HALF_UP
+﻿from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
 
 from .models import AcademicStanding, ClassificationRule, GPASemester, Grade, Student
 
 DEFAULT_CLASSIFICATION_RULES = [
-    (Decimal("3.60"), Decimal("4.00"), "Xuất sắc"),
-    (Decimal("3.20"), Decimal("3.59"), "Giỏi"),
-    (Decimal("2.50"), Decimal("3.19"), "Khá"),
-    (Decimal("2.00"), Decimal("2.49"), "Trung bình"),
-    (Decimal("0.00"), Decimal("1.99"), "Yếu"),
+    (Decimal("3.60"), Decimal("4.00"), "Xuat sac"),
+    (Decimal("3.20"), Decimal("3.59"), "Gioi"),
+    (Decimal("2.50"), Decimal("3.19"), "Kha"),
+    (Decimal("2.00"), Decimal("2.49"), "Trung binh"),
+    (Decimal("0.00"), Decimal("1.99"), "Yeu"),
 ]
 
 
@@ -33,7 +33,7 @@ def get_classification_for_gpa(gpa: Decimal) -> str:
     for diem_tu, diem_den, nhan_xep_loai in DEFAULT_CLASSIFICATION_RULES:
         if diem_tu <= gpa <= diem_den:
             return nhan_xep_loai
-    return "Chưa xếp loại"
+    return "Chua xep loai"
 
 
 def _semester_sort_key(nam_hoc: str, hoc_ky: str) -> tuple[int, int]:

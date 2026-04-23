@@ -1,29 +1,32 @@
-# SMS - Student Management System (Django)
+﻿# SMS - Student Management System (Django)
 
 Du an Django duoc xay dung dua tren UML trong `prod/uml`.
 
-## 1. Chuc nang da co
-- Them / sua / xoa mem sinh vien
-- Tim kiem sinh vien theo keyword, khoa, nganh, lop, trang thai
-- Tao hoc phan va dang ky hoc phan
-- Nhap diem (chuyen can, qua trinh, diem thi), tu dong tinh diem tong ket + diem he 4 + diem chu
+## 1. Chuc nang hien tai
+- Phan quyen 3 role: `ADMIN`, `SINH_VIEN`, `GIANG_VIEN`
+- Quan tri sinh vien (them, sua, xoa mem, tim kiem)
+- Quan tri hoc phan va lop hoc phan
+- Dang ky hoc phan theo lop HP
+- Sinh vien tu dang ky va xem mon da dang ky
+- Giang vien xem lop cua toi, diem danh theo buoi, nhap/sua diem theo danh sach lop
+- Tu dong tinh diem tong ket, diem he 4, diem chu
 - Tu dong tinh GPA tich luy, GPA hoc ky va xep loai hoc luc
 - Bao cao bang diem tren giao dien va xuat CSV
 - Audit log thao tac
 
 ## 2. Cong nghe
 - Backend: Django 6
-- CSDL SQL: SQLite (mac dinh, co the doi sang MySQL/PostgreSQL trong `settings.py`)
+- CSDL SQL: SQLite (mac dinh)
 - Frontend: Django Template + HTML/CSS
 
 ## 3. Cau truc chinh
 ```text
 code/
   manage.py
-  sms_project/            # settings + root urls
-  students/               # app nghiep vu chinh
-  templates/              # giao dien html
-  static/css/styles.css   # giao dien css
+  sms_project/
+  students/
+  templates/
+  static/css/styles.css
   requirements.txt
 ```
 
@@ -38,24 +41,28 @@ python manage.py seed_demo_data --reset
 python manage.py runserver
 ```
 
-Mac dinh he thong da luu SQLite o thu muc `%TEMP%\\sms_project\\db.sqlite3` de tranh loi OneDrive.
+Mac dinh he thong luu SQLite o `%TEMP%\\sms_project\\db.sqlite3` de tranh loi OneDrive.
 Ban van co the override bang bien `SMS_SQLITE_PATH` neu muon dung file CSDL rieng.
 
 ## 5. URL chinh
-- `/` : Trang chủ
-- `/students/` : Danh sach + tim kiem sinh vien
-- `/students/create/` : Them sinh vien
-- `/grades/input/` : Nhap diem
-- `/courses/create/` : Tao hoc phan
-- `/enrollments/create/` : Tao dang ky hoc phan
-- `/reports/transcript/<ma_sv>/` : Bao cao bang diem
-- `/accounts/login/` : Dang nhap
+- `/` : Trang chu
+- `/students/` : Danh sach sinh vien (ADMIN)
+- `/classes/` : Danh sach lop hoc phan (ADMIN)
+- `/classes/my/` : Lop cua toi (GIANG_VIEN)
+- `/classes/<id>/` : Chi tiet lop + diem danh + danh sach nhap/sua diem
+- `/my/enrollments/` : Mon da dang ky + dang ky hoc phan (SINH_VIEN)
+- `/grades/input/` : Nhap/sua diem (ADMIN, GIANG_VIEN)
+- `/reports/my-transcript/` : Bang diem cua toi (SINH_VIEN)
+- `/reports/transcript/<ma_sv>/` : Bao cao bang diem theo sinh vien
 
-## 6. Tai khoan demo (sau khi chay seed)
+## 6. Tai khoan demo (sau khi seed)
 - `admin / 123456` (ADMIN)
-- `daotao / 123456` (DAO_TAO)
 - `giangvien / 123456` (GIANG_VIEN)
-- `covan / 123456` (CO_VAN)
+- `giangvien2 / 123456` (GIANG_VIEN)
+- `sv001 / 123456` (SINH_VIEN)
+- `sv002 / 123456` (SINH_VIEN)
+- `sv003 / 123456` (SINH_VIEN)
+- `sv004 / 123456` (SINH_VIEN)
 
 ## 7. Test
 ```bash

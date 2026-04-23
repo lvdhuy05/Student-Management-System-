@@ -1,0 +1,106 @@
+﻿{% extends "base.html" %}
+{% block title %}Dang ky mon hoc | SMS{% endblock %}
+{% block page_title %}Dang ky mon hoc{% endblock %}
+{% block page_subtitle %}Chon lop hoc phan de dang ky{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Dang ky mon hoc</h2>
+      <small>Sinh vien: {{ student.ma_sv }} - {{ student.ho_ten }}</small>
+    </div>
+    <a class="btn ghost" href="{% url 'students:my_transcript' %}">Bang diem</a>
+  </div>
+
+  <form method="get" class="search-row">
+    <input type="text" name="q" value="{{ keyword }}" placeholder="Tim kiem theo ma lop, ten mon, giang vien...">
+    <button class="btn ghost" type="submit">Loc</button>
+  </form>
+
+  {% if form.classroom.errors %}
+    <p class="error-text">{{ form.classroom.errors|join:", " }}</p>
+  {% endif %}
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Ma lop HP</th>
+          <th>Mon hoc</th>
+          <th>Giang vien</th>
+          <th>Hoc ky</th>
+          <th>Si so</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for classroom in available_classrooms %}
+          <tr>
+            <td><strong>{{ classroom.ma_lop_hp }}</strong></td>
+            <td>
+              <strong>{{ classroom.course.ten_hp }}</strong><br>
+              <small>{{ classroom.course.ma_hp }} • {{ classroom.course.so_tin_chi }} TC</small>
+            </td>
+            <td>{% if classroom.giang_vien %}{{ classroom.giang_vien.username }}{% else %}-{% endif %}</td>
+            <td><span class="term-pill">HK{{ classroom.hoc_ky }} {{ classroom.nam_hoc }}</span></td>
+            <td>{{ classroom.student_count }}/{{ classroom.si_so_toi_da }}</td>
+            <td>
+              <form method="post" class="inline-form">
+                {% csrf_token %}
+                <input type="hidden" name="classroom" value="{{ classroom.id }}">
+                <button class="btn tiny primary" type="submit">Dang ky</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6">Khong con lop hoc phan phu hop de dang ky.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Mon da dang ky</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Hoc ky</th>
+          <th>Nam hoc</th>
+          <th>Ma lop HP</th>
+          <th>Mon hoc</th>
+          <th>Giang vien</th>
+          <th>Diem TK</th>
+          <th>Diem chu</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enrollment in enrollments %}
+          {% with latest_grade=enrollment.grades.first %}
+            <tr>
+              <td>{{ enrollment.hoc_ky }}</td>
+              <td>{{ enrollment.nam_hoc }}</td>
+              <td>{% if enrollment.classroom %}{{ enrollment.classroom.ma_lop_hp }}{% else %}-{% endif %}</td>
+              <td>{{ enrollment.course.ma_hp }} - {{ enrollment.course.ten_hp }}</td>
+              <td>{% if enrollment.classroom and enrollment.classroom.giang_vien %}{{ enrollment.classroom.giang_vien.username }}{% else %}-{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_tong_ket_10 }}{% else %}-{% endif %}</td>
+              <td>{% if latest_grade %}{{ latest_grade.diem_chu }}{% else %}-{% endif %}</td>
+            </tr>
+          {% endwith %}
+        {% empty %}
+          <tr>
+            <td colspan="7">Ban chua co dang ky hoc phan.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
